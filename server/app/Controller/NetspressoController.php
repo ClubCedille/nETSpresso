@@ -20,7 +20,7 @@ class NetspressoController extends AppController {
  *
  * @var array
  */
-	public $uses = array('Metric');
+	public $uses = array('Netspresso', 'Metric');
 
 /**
  * beforeFilter method
@@ -48,9 +48,11 @@ class NetspressoController extends AppController {
 }
 
 /**
- * metric method
+ * method metric
  *
- * @return void
+ * @throws BadRequestException, InternalErrorException, Exception
+ * @param  none
+ * @return array array $response
  */
 	public function metric() {
 	
@@ -60,13 +62,13 @@ class NetspressoController extends AppController {
 		// Get JSON dencoded data received from client
 		$jsonData = $this->request->data; 
 
-// For debuging
-//$this->log("NetspressoController::metric input data: " . var_export($jsonData, true));	
+		// For debuging
+		//$this->log("NetspressoController::metric input data: " . var_export($jsonData, true));
 
 		// Throw an error in case JSON data is not properly decoded
-     	if(is_null($jsonData) or $jsonData == false) {
-         	throw new BadRequestException(__('The received input json data is malformed'));	
-     	}
+		if(is_null($jsonData) or $jsonData == false) {
+			throw new BadRequestException(__('The received input json data is malformed'));
+		}
 
 		// Initialize the Metric model
 		$this->Metric->create();
@@ -74,10 +76,8 @@ class NetspressoController extends AppController {
 		try {
 
 			// Save the Event model with request data
-			if ($this->Metric->save($this->request->data)) {
-
-			} else {
-	         	throw new InternalErrorException(__('The metric could not be saved. Please, try again.'));	
+			if (!$this->Metric->save($this->request->data)) {
+				throw new InternalErrorException(__('The metric could not be saved. Please, try again.'));
 			}
 
 		} catch(Exception $e) {
@@ -85,25 +85,23 @@ class NetspressoController extends AppController {
 			// TODO : Verify for duplicate entries as the client keep trying
 			// instead of throwing an error
 
-			$this->log("NetspressoController::metric caught exception: " .   $e->getMessage());	
-			$this->log("NetspressoController::metric input data: " . var_export($this->request->data,true));	
+			$this->log("NetspressoController::metric caught exception: " .   $e->getMessage());
+			$this->log("NetspressoController::metric input data: " . var_export($this->request->data,true));
 
 		}
 
-		// Create response object reply
-		//
-		$response = $this->create_response_object_reply('200', 'OK');
+		// Create the response object
+		$response = $this->create_response_object_reply('000', 'Ok');
 
 		// Serialize the response object
 		//
 		$this->set(array('response' => $response));
 		$this->set('_serialize', array('response'));
 		
-		
 	} // end of metric
 
 /**
- * create_response_object_reply method
+ * method create_response_object_reply method
  *
  * @throws none
  * @param  string $code, string $message
@@ -113,13 +111,102 @@ class NetspressoController extends AppController {
 		
 		// Preapare response object reply
 		//
-		$datetime = new DateTime();		
+		$datetime = new DateTime();
 		$response = array (	'date' => $datetime->format(DateTime::ISO8601),
-							'response' => array('reply_code' => $code,
-												'reply_message' => $message,),);
- 		return $response;
+							'code' => $code,
+							'message' => $message,);
+		return $response;
 
 	} // end of create_response_object_reply
 
+/**
+ * method save_metrics
+ *
+ * @throws BadRequestException, InternalErrorException, Exception
+ * @param  array $metrics
+ * @return none
+ */
+	private function save_metrics($metrics = null) {
+
+		//For debuging
+		//$this->log("NetspressoController::save_metrics input data: " . var_export($metrics, true));
+
+		// Loop on received metrics
+		foreach ( $metrics as $metric ) {
+
+			// Initialize the Metric model
+			$this->Metric->create();
+
+			try {
+				// Save the Event model with request data
+				if (! $this->Metric->save($metric)) {
+					throw new InternalErrorException(__('The metric could not be saved. Please, try again.'));
+				}
+			} catch(Exception $e) { 
+				$this->log("NetspressoController::save_metrics caught exception: " .   $e->getMessage());
+				$this->log("NetspressoController::save_metrics input data: " . var_export($metric, true));
+			}
+			
+			// Clear the metric model before loop
+			$this->Metric->clear();
+		}
+
+	} // end of save_metrics
+
+
+/**
+ * method heartbeat
+ *
+ * @throws BadRequestException, InternalErrorException, Exception
+ * @param  none
+ * @return array array $response
+ */
+
+	public function heartbeat() {
+	
+		// Only handle POST method
+		$this->request->allowMethod('post');
+
+		// Get JSON dencoded data received from client
+		$heartbeat = $this->request->data;
+
+		// Throw an error in case JSON data is not properly decoded
+		if(is_null($heartbeat) or $heartbeat == false) {
+			throw new BadRequestException(__('The received input json data is malformed'));
+		}
+
+		//For debuging
+		//$this->log("NetspressoController::heartbeat input data: " . var_export($heartbeat, true));
+
+		// Save metrics 
+		$this->save_metrics($heartbeat['metrics']);
+		
+		// Initialize the nETSpresso object
+		$this->Netspresso->load($heartbeat['network']['mac']);
+
+		//For debuging
+		//$this->log("NetspressoController::heartbeat current state " . $heartbeat['box']['state']);
+		//$this->log("NetspressoController::heartbeat final state " . $this->Netspresso->get('state'));
+
+		// Validate current state
+		if (! $this->Netspresso->validateState($heartbeat['box']['state'])) {
+			throw new BadRequestException(__("The current state (" . $heartbeat['box']['state'] . ") is not valid"));
+		}
+		
+		// Adjust box state if nescesary
+		$action = $this->Netspresso->getNextAction($heartbeat['box']['state']);
+		
+		// set the last 
+		$this->Netspresso->saveField('last', date("Y-m-d H:i:s"));
+
+		// Create the response object
+		$response = $this->create_response_object_reply($action['code'], $action['message']);
+
+		// Serialize the response object
+		//
+		$this->set(array('response' => $response));
+		$this->set('_serialize', array('response'));
+
+	} // end of heartbeat
 
 } // end of class

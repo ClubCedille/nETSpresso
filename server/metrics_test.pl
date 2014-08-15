@@ -12,7 +12,7 @@ $req->header('content-type' => 'application/json');
 $req->header('x-auth-token' => 'tr9D96HJtlcH');
  
 # add POST data to HTTP request body
-my $post_data = '{"path":"netspresso.relay.01","value":38.400,"units":"volts","epoch":"2014-08-09T05:46:06-0400"}';
+my $post_data = '{"sensor":"netspresso.relay.01","value":38.400,"units":"volts","adquired":"2014-08-09T05:46:06-0400"}';
 $req->content($post_data);
  
 my $resp = $ua->request($req);

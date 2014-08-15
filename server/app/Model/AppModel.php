@@ -21,4 +21,15 @@ App::uses('Model', 'Model');
  * @package       app.Model
  */
 class AppModel extends Model {
+
+/**
+ * get method
+ *
+ * @return value of requested attributte
+ */
+
+	function get($field=null) {
+		return $this->data[$this->alias][$field];
+	}
+
 }
