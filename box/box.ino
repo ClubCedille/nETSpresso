@@ -9,6 +9,7 @@ Fonctionnement: TODO
 #include <SPI.h>
 #include <Ethernet.h>
 #include <AD595.h>
+#include "EmonLib.h"                   // Include Emon Library
 
 // Adresse MAC (tel qu'indiqué sous le Arduino):
 byte mac[] = { 0x90, 0xA2, 0xDA, 0x0E, 0xDC, 0x1E };
@@ -20,6 +21,7 @@ IPAddress ip(192,168,0,177);
 EthernetClient client;
 // Initialisation de la librairie du thermocouple:
 AD595 thermocouple;
+EnergyMonitor emon1;                   // Create an instance
 int compteur = 0;
 int flag = 0;
 
@@ -33,6 +35,8 @@ void setup()
   Serial.begin(9600);
   // Délais pour démarrer la communication sérielle manuellement (Facultatif):
   delay(5000);
+  // Current: input pin, calibration.  
+  emon1.current(5, 5);             
   // Message de bienvenue:
   Serial.println(" -----------------------");
   Serial.println(" Bienvenue à nETSpresso!");
@@ -108,7 +112,13 @@ void event()
   temp = thermocouple.measure(TEMPC);
   Serial.println(temp);
   Serial.println("");
-
+  
+  //Calcul du courant RMS
+  double Irms = emon1.calcIrms(1480);
+  Serial.println("Courant RMS:");
+  Serial.println(Irms);
+  Serial.println("");
+  
   // Requête HTTP:
   client.println("POST /netspresso/metric.json HTTP/1.1");
   client.println("Host: 192.168.0.104"); 
