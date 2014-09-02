@@ -11,17 +11,23 @@ Fonctionnement: TODO
 #include <AD595.h>
 #include "EmonLib.h"                   // Include Emon Library
 
-// Adresse MAC (tel qu'indiqué sous le Arduino):
+// Adresse MAC Arduino Ethernet:
 byte mac[] = { 0x90, 0xA2, 0xDA, 0x0E, 0xDC, 0x1E };
-// Adresse IP du serveur:
+
+// Adresse IP serveur distant:
 char server[] = "192.168.0.104";
-// Adresse IP par défaut si DHCP est indisponible:
+
+// Adresse IP par défaut de arduino si DHCP indisponible:
 IPAddress ip(192,168,0,177);
+
 // Initialisation de la librairie du client Ethernet:
 EthernetClient client;
-// Initialisation de la librairie du thermocouple:
+
+// Initialisation du thermocouple:
 AD595 thermocouple;
-EnergyMonitor emon1;                   // Create an instance
+float calib = 4.65;
+EnergyMonitor emon1;
+
 int compteur = 0;
 int flag = 0;
 
@@ -31,70 +37,43 @@ int flag = 0;
 
 void setup()
 {
-  // Open serial communications and wait for port to open:
+  // Initialisation communication sérielle et attente de l'ouverture du port:
   Serial.begin(9600);
-  // Délais pour démarrer la communication sérielle manuellement (Facultatif):
   delay(5000);
-  // Current: input pin, calibration.  
-  emon1.current(5, 5);             
+
   // Message de bienvenue:
   Serial.println(" -----------------------");
   Serial.println(" Bienvenue à nETSpresso!");
   Serial.println(" -----------------------");
   Serial.println("");
   Serial.println("--> Initialisation, veuillez patienter...");
-  // Démarrage de la connection Ethernet:
-    if (Ethernet.begin(mac) == 0) {
+  
+  // Configuration du capteur de courant:  
+  emon1.current(5, calib); // (Pin number, calibration value)
+  
+  // Configuration de la connection ethernet:
+  if (Ethernet.begin(mac) == 0) // (Mac address)
+  {
     Serial.println("--> DHCP indisponible");
     Serial.println("--> Tentative de connection avec adresse IP par défaut:");
-    Ethernet.begin(mac, ip);
+    Ethernet.begin(mac, ip); // (Mac address, default arduino ip number)
   }
+  
   // Délais pour initialisation du Ethernet Shield:
-  delay(1000);
   Serial.println("--> Connection...");
+  delay(2000);
+  
   // Si la connection est réussie, affichage sur terminal sériel:
-  if (client.connect(server, 80))
+  if (client.connect(server, 80)) // (Serveur distant, port)
   {
     Serial.println("--> Connecté");
   }
+  
+  // Si la connection a échouée
   else
   {
-    // Si la connection au serveurs est impossible:
     Serial.println("--> Connection impossible!");
-  }  
-
-  // Configuration des interruptions
-  //cli(); //stop interrupts
-  //set timer1 interrupt at 1Hz
-  //TCCR1A = 0;// set entire TCCR1A register to 0
-  //TCCR1B = 0;// same for TCCR1B
-  //TCNT1  = 0;//initialize counter value to 0
-  // set compare match register for 1hz increments
-  //OCR1A = 15624;// = (16*10^6) / (1*1024) - 1 (must be <65536)
-  // turn on CTC mode
-  //TCCR1B |= (1 << WGM12);
-  // Set CS10 and CS12 bits for 1024 prescaler
-  //TCCR1B |= (1 << CS12) | (1 << CS10);  
-  // enable timer compare interrupt
-  //TIMSK1 |= (1 << OCIE1A);  
-  //sei();//allow interrupts
-}
-
-//------------------------//
-// ROUTINE D'INTERRUPTION //
-//------------------------//
-
-ISR(TIMER1_COMPA_vect){
-  if (compteur >= 5)
-  {
-    flag = 1;
-    compteur = 0;
   }
-  else
-  {
-    compteur++;
-    Serial.println(compteur);
-  }  
 }
 
 //---------------------//
@@ -103,21 +82,29 @@ ISR(TIMER1_COMPA_vect){
 
 void event()
 {
-  Serial.println("Event!");
-  delay(500);
-     
-  Serial.println("Température:");
-  String PostData="{\"path\":\"netspresso.relay.01\",\"value\":3,\"units\":\"watts\",\"epoch\":\"2014-08-09T05:46:06-0400\"}";
+  String PostData;
+  //String PostData="{\"path\":\"netspresso.relay.01\",\"value\":3,\"units\":\"watts\",\"epoch\":\"2014-08-09T05:46:06-0400\"}";
   int temp;
+  double Irms;
+  Serial.println("Event!");
+  Serial.println("");
+  delay(500);
+  
+  // Capture de la température
+  Serial.println("Température:");
   temp = thermocouple.measure(TEMPC);
   Serial.println(temp);
   Serial.println("");
   
-  //Calcul du courant RMS
-  double Irms = emon1.calcIrms(1480);
+  // Capture du courant
   Serial.println("Courant RMS:");
+  Irms = emon1.calcIrms(1480);
   Serial.println(Irms);
   Serial.println("");
+  
+  // Informations à transférer au serveur:
+  PostData="{\"temperature\":temp,\"unite1\":\"degre_celcius\",\"courant\":Irms,\"unite2\":\"Amperes\"}";
+  Serial.println(PostData);
   
   // Requête HTTP:
   client.println("POST /netspresso/metric.json HTTP/1.1");
@@ -128,21 +115,16 @@ void event()
   client.println(PostData.length());
   client.println();   
   client.println(PostData);
-  
+
+  Serial.println("Délais d'attente...");  
   delay(1000);
-  Serial.println("delay");
-  // if there are incoming bytes available
-  // from the server, read them and print them:
-  //boolean waiting=true;
-  //while (waiting)
-  //{
-  Serial.print("Réponse baby:");
+
+  Serial.print("Réponse du serveur:");
   while(client.available())
   {
     char c = client.read();
     Serial.print(c);
   }
-  //}
   Serial.println("");
 }
 
@@ -152,38 +134,11 @@ void event()
 
 void loop()
 {
-  delay(5000);
   do
   {
-    if (true)
-    //if (flag)
-    {
-      //cli();
-      flag = 0;
-      // if the server's disconnected, stop the client:
-      if (!client.connected())
-      {
-        Serial.println();
-        Serial.println("--> Déconnecté...");
-        Serial.println("");
-        client.stop();
-        
-        if (client.connect(server, 80))
-        {
-          Serial.println("--> Connecté");
-        }
-        else
-        {
-          // Si la connection au serveurs est impossible:
-          Serial.println("--> Connection impossible!");
-          //return;
-        }  
-      } //if (!client.connected())
-      event();
-      //sei();
-    }
-
-/*    // if the server's disconnected, stop the client:
+    delay(5000);
+    
+    // if the server's disconnected, stop the client:
     if (!client.connected())
     {
       Serial.println();
@@ -199,10 +154,9 @@ void loop()
       {
         // Si la connection au serveurs est impossible:
         Serial.println("--> Connection impossible!");
-        return;
+        //return;
       }  
-    } //if (!client.connected()) */
-    
-    delay(200);
+    }
+    event();
   } while(true);  
 }
