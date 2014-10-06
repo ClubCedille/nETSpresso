@@ -10,8 +10,8 @@ Programme de contrôle de la machine à expresso «nETSpresso»
 #include "EmonLib.h"
 #include <SoftwareSerial.h>
 
-#define RELAY1 6
-#define RELAY2 7
+#define REL_LOCK 6
+#define REL_WARM 7
 
 // Create a software serial port!
 SoftwareSerial lcd = SoftwareSerial(0,2); 
@@ -30,16 +30,34 @@ EthernetClient client;
 
 // Initialisation du thermocouple:
 AD595 thermocouple;
+
+// Capteur de courant
 float Irms1;
 float Irms2;
 float calib = 42.55;
 EnergyMonitor emon1;
 EnergyMonitor emon2;
 
-
 int compteur = 0;
 int flag = 0;
 int temp = 0;
+int manual_mode = 0;
+
+#define STANDBY 0
+#define WARMING 1
+#define READY 2
+#define COOLING 3
+#define LOCKED 4
+
+int state=STANDBY;
+
+#define DO_NOTHING 0
+#define WARM_UP 1
+#define COOL_DOWN 2
+#define LOCK_DOWN 3
+#define OVERRIDE 4
+
+int action=DO_NOTHING;
 
 //--------------------------//
 // ROUTINE D'INITIALISATION //
@@ -48,8 +66,8 @@ int temp = 0;
 void setup()
 {
   // Initialise les sorties pour les relais
-  pinMode(RELAY1, OUTPUT);
-  pinMode(RELAY2, OUTPUT);  
+  pinMode(REL_LOCK, OUTPUT);
+  pinMode(REL_WARM, OUTPUT);  
   
   // Initialisation communication sérielle et attente de l'ouverture du port:
   Serial.begin(9600);
@@ -134,9 +152,9 @@ void setup()
   }*/
 }
 
-//-----------------------------------//
-// ROUTINE DU CAPTEUR DE TEMPÉRATURE //
-//-----------------------------------//
+//--------------------//
+// TEMPERATURE SENSOR //
+//--------------------//
 int temperature()
 {
   //int temp;
@@ -147,10 +165,10 @@ int temperature()
   return temp;
 }
 
-//---------------------------------//
-// ROUTINE DU CAPTEUR DE COURANT 1 //
-//---------------------------------//
-float capt1()
+//------------------------------//
+// MAIN POWER AC CURRENT SENSOR //
+//------------------------------//
+float ac_power()
 {
   Serial.println("Courant RMS Pin 5:");
   Irms1 = emon1.calcIrms(1480);
@@ -159,10 +177,10 @@ float capt1()
   return Irms1;
 }
   
-//---------------------------------//
-// ROUTINE DU CAPTEUR DE COURANT 2 //
-//---------------------------------//
-float capt2()
+//-------------------------------//
+// MANUAL MODE AC CURRENT SENSOR //
+//-------------------------------//
+float ac_manual()
 {
   Serial.println("Courant RMS Pin 4:");
   Irms2 = emon2.calcIrms(1480);
@@ -174,7 +192,7 @@ float capt2()
 //-------------------------//
 // ROUTINE D'AFFICHAGE LCD //
 //-------------------------//
-void aff()
+void update_lcd_display()
 {
   // Couleur rouge
   lcd.write(0xFE);
@@ -191,33 +209,108 @@ void aff()
   // Affiche température
   lcd.print("Temperature= ");
   lcd.print(temp);
+  
+  
+  switch(get_state()){
+  case STANDBY:
+    lcd.print(" STAND BY");
+    //blue
+    break;
+  
+  case WARMING:
+    lcd.print(" WARMING UP");
+    // orange
+    break;
+  
+  case READY:
+    lcd.print(" READY");
+    // green
+    break;
+  
+  case COOLING:
+    lcd.print(" COOLING");
+    if (temperature() > 100) {
+    // green
+    break;
+    }
+    if (temperature() > 30) {
+    // orange
+    break;
+    }
+    break;
+  
+  case LOCKED:
+    lcd.print(" LOCKED");
+    // red
+    break;
+  default:
+    break;
+  }
+
+  
 }
 
-//---------------------//
-// ROUTINE DU RELAIS 1 //
-//---------------------//
-void rel1()
+//----------------//
+// RELAY ACTIVATE //
+//----------------//
+void relay_activate(int relay)
 {
-  digitalWrite(RELAY1,HIGH);
-  delay(1000);
-  digitalWrite(RELAY1,LOW);
+  digitalWrite(relay,HIGH);
 }
 
-//---------------------//
-// ROUTINE DU RELAIS 2 //
-//---------------------//
-void rel2()
+//------------------//
+// RELAY DEACTIVATE //
+//------------------//
+void relay_deactivate(int relay)
 {
-  digitalWrite(RELAY2,HIGH);
-  delay(1000);
-  digitalWrite(RELAY2,LOW);
+  digitalWrite(relay,LOW);
+}
+
+//-----------//
+// SET STATE //
+//-----------//
+void set_state(int new_state)
+{
+   state = new_state;
+   update_lcd_display();
+   Serial.println("--> WARMING UP");
+}
+
+//-----------//
+// GET STATE //
+//-----------//
+int get_state()
+{
+  return state;
+}
+
+
+//-------------------//
+// CHECK MANUAL MODE //
+//-------------------//
+void check_manual_mode()
+{
+  if (ac_manual() > 1) {
+    manual_mode++;
+  }
+  else {
+    manual_mode=0;
+  }
+}
+
+//---------------//
+// MANUAL CYCLES //
+//---------------//
+int manual_cycles()
+{
+  return manual_mode;
 }
 
 //---------------------//
 // ROUTINE D'ÉVÉNEMENT //
 //---------------------//
 
-void event()
+int send_event()
 {
   String PostData;
   //String PostData="{\"path\":\"netspresso.relay.01\",\"value\":3,\"units\":\"watts\",\"epoch\":\"2014-08-09T05:46:06-0400\"}";
@@ -230,15 +323,21 @@ void event()
   temp = temperature();
   
   // Capture du courant
-  Irms1 = capt1();
-  Irms2 = capt2();
+  Irms1 = ac_power();
+  Irms2 = ac_manual();
   
   // Affichage sur LCD
-  aff();
+  //aff();
 
   // Controle des relais
-  rel1();
-  rel2();
+  relay_activate(REL_LOCK);
+  delay(1000);
+  relay_deactivate(REL_LOCK);
+  delay(1000);
+  relay_activate(REL_WARM);
+  delay(1000);
+  relay_deactivate(REL_WARM);
+  delay(1000);
   
   /*
   // Informations à transférer au serveur:
@@ -265,6 +364,93 @@ void event()
     Serial.print(c);
   }
   Serial.println("");*/
+  
+  return DO_NOTHING;
+}
+
+//---------//
+// WARM UP //
+//---------//
+void warm_up()
+{
+ if (temperature() < 100) {
+    relay_activate(REL_WARM);
+    set_state(WARMING);
+    Serial.println("--> WARMING UP");
+ }
+}
+
+//-----------//
+// COOL DOWN //
+//-----------//
+void cool_down()
+{
+ relay_deactivate(REL_WARM);
+ set_state(COOLING);
+ Serial.println("--> COOLING DOWN");
+}
+
+//-----------//
+// LOCK DOWN //
+//-----------//
+void lock_down()
+{
+ relay_activate(REL_LOCK);
+ relay_deactivate(REL_WARM);
+ set_state(LOCKED);
+ Serial.println("--> MACHINE LOCKED");
+}
+
+//----------//
+// OVERRIDE //
+//----------//
+void override()
+{
+ relay_deactivate(REL_LOCK);
+ relay_deactivate(REL_WARM);
+ set_state(STANDBY);
+ Serial.println("--> STANDBY");
+}
+
+//-----------------//
+// HOLD STATE (ok) //
+//----------------//
+void hold_state()
+{
+  switch(get_state()) {
+    case STANDBY:
+      if ((temperature() > 100) && (manual_cycles() > 90)) {
+        set_state(READY);
+      }
+      break;
+    
+    case WARMING:
+      if (temperature() > 100) {
+        set_state(READY);
+      }
+      break;
+    
+    case READY:
+      if (temperature() > 120) {
+        cool_down();
+      }
+      break;
+    
+    case COOLING:
+      if (temperature() < 30) {
+        set_state(STANDBY);
+      }
+      break;
+    
+    case LOCKED:
+      break;
+    
+    default:
+      break;
+  }
+  
+ set_state(STANDBY);
+ Serial.println("--> STANDBY");
 }
 
 //--------------------//
@@ -297,6 +483,28 @@ void loop()
         //return;
       }  
     }*/
-    event();
+    
+    action = send_event();
+    
+    switch(action){
+      case WARM_UP:
+        warm_up();
+        break;
+      case COOL_DOWN:
+        cool_down();
+        break;
+      case LOCK_DOWN:
+        lock_down();
+        break;
+      case OVERRIDE:
+        override();
+        break;
+      default:
+        hold_state();
+    }
+    
+    check_manual_mode();
+    
+
   } while(true);  
 }
