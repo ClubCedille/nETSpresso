@@ -273,7 +273,6 @@ void set_state(int new_state)
 {
    state = new_state;
    update_lcd_display();
-   Serial.println("--> WARMING UP");
 }
 
 //-----------//
