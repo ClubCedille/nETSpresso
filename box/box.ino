@@ -447,9 +447,7 @@ void hold_state()
     default:
       break;
   }
-  
- set_state(STANDBY);
- Serial.println("--> STANDBY");
+
 }
 
 //--------------------//
