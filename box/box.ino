@@ -158,7 +158,7 @@ void setup()
 int temperature()
 {
   //int temp;
-  Serial.println("Température:");
+  Serial.println("TEMPERATURE (°C):");
   temp = thermocouple.measure(TEMPC);
   Serial.println(temp);
   Serial.println("");
@@ -170,7 +170,7 @@ int temperature()
 //------------------------------//
 float ac_power()
 {
-  Serial.println("Courant RMS Pin 5:");
+  Serial.println("AC POWER CURRENT SENSOR (A):");
   Irms1 = emon1.calcIrms(1480);
   Serial.println(Irms1);
   Serial.println("");
@@ -182,7 +182,7 @@ float ac_power()
 //-------------------------------//
 float ac_manual()
 {
-  Serial.println("Courant RMS Pin 4:");
+  Serial.println("AC MANUAL MODE CURRENT SENSOR (A):");
   Irms2 = emon2.calcIrms(1480);
   Serial.println(Irms2);
   Serial.println("");
@@ -327,7 +327,7 @@ int send_event()
   
   // Affichage sur LCD
   //aff();
-
+/*
   // Controle des relais
   relay_activate(REL_LOCK);
   delay(1000);
@@ -337,7 +337,7 @@ int send_event()
   delay(1000);
   relay_deactivate(REL_WARM);
   delay(1000);
-  
+*/  
   /*
   // Informations à transférer au serveur:
   PostData="{\"temperature\":temp,\"unite1\":\"degre_celcius\",\"courant\":Irms,\"unite2\":\"Amperes\"}";
@@ -419,7 +419,8 @@ void hold_state()
   switch(get_state()) {
     case STANDBY:
       if ((temperature() > 100) && (manual_cycles() > 90)) {
-        set_state(READY);
+        lock_down();
+        
       }
       break;
     
