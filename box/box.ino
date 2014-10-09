@@ -10,6 +10,7 @@ Programme de contrôle de la machine à expresso «nETSpresso»
 #include "EmonLib.h"
 #include <SoftwareSerial.h>
 
+#define LED_SWITCH 5
 #define REL_LOCK 6
 #define REL_WARM 7
 
@@ -65,6 +66,9 @@ int action=DO_NOTHING;
 
 void setup()
 {
+  // Initialise switch LED
+  pinMode(LED_SWITCH, OUTPUT);
+  
   // Initialise les sorties pour les relais
   pinMode(REL_LOCK, OUTPUT);
   pinMode(REL_WARM, OUTPUT);  
@@ -150,6 +154,13 @@ void setup()
   {
     Serial.println("--> Connection impossible!");
   }*/
+  
+  for(int i=0; i<4; i++){
+    digitalWrite(LED_SWITCH, HIGH);
+    delay(200);
+    digitalWrite(LED_SWITCH, LOW);
+    delay(400);
+  }
 }
 
 //--------------------//
