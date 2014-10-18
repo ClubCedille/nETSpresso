@@ -12,7 +12,25 @@ $req->header('content-type' => 'application/json');
 $req->header('x-auth-token' => 'tr9D96HJtlcH');
  
 # add POST data to HTTP request body
-my $post_data = '{"uuid":"d63c8131-dc60-5145-88ef-7f1cbad1e12e","event_id":38,"resource_event_id":38,"calendar_id":6,"user_id":7,"username":"Laurin, Patrick","start_time":"2014-08-12 17:30","end_time":"2014-08-12 18:30","subjet":"Test","status":"CONFIRMED"}';
+my $post_data = '
+{
+    "box": {
+        "name" : "netspresso01",
+        "state" : "Ready"
+    },
+	"event": {
+		"uuid":"d63c8131-dc60-5145-88ef-7f1cbad1e12e",
+		"event_id":38,
+		"resource_event_id":37,
+		"calendar_id":6,
+		"user_id":7,
+		"username":"Laurin, Patrick",
+		"start_time":"2014-08-12 17:30",
+		"end_time":"2014-08-12 18:30",
+		"subjet":"Test",
+		"status":"CONFIRMED"
+	}
+}';
 $req->content($post_data);
  
 my $resp = $ua->request($req);

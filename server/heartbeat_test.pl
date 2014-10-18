@@ -16,7 +16,8 @@ $req->header('x-auth-token' => 'tr9D96HJtlcH');
 my $post_data = '{
     "box": {
         "name" : "netspresso01",
-        "state" : "Cooling-Down"
+        "state" : "Cooling-Down",
+        "temperature" : "30.00"
     },
     "network": {
         "mac": "08:00:27:fe:28:45",

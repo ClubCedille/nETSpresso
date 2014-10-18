@@ -182,22 +182,40 @@ class NetspressoController extends AppController {
 		$this->save_metrics($heartbeat['metrics']);
 		
 		// Initialize the nETSpresso object
-		$this->Netspresso->load($heartbeat['network']['mac']);
+		$this->Netspresso->loadByMac($heartbeat['network']['mac']);
 
 		//For debuging
 		//$this->log("NetspressoController::heartbeat current state " . $heartbeat['box']['state']);
 		//$this->log("NetspressoController::heartbeat final state " . $this->Netspresso->get('state'));
 
-		// Validate current state
+		// Validate received current state
 		if (! $this->Netspresso->validateState($heartbeat['box']['state'])) {
 			throw new BadRequestException(__("The current state (" . $heartbeat['box']['state'] . ") is not valid"));
 		}
 		
-		// Adjust box state if nescesary
+		// Adjust event state if nescesary
+		$this->Netspresso->evaluateEventState($heartbeat);
+		
+		// Get the next action from current to final state
 		$action = $this->Netspresso->getNextAction($heartbeat['box']['state']);
 		
-		// set the last 
-		$this->Netspresso->saveField('last', date("Y-m-d H:i:s"));
+		// set the last heartbeat time
+		$this->Netspresso->setHeartbeatTime(date("Y-m-d H:i:s"));
+		
+		// Set the last heartbeat temperature
+		$this->Netspresso->setHeartbeatTemperature($heartbeat['box']['temperature']);
+
+		// set the last heartbeat state
+		$this->Netspresso->setHeartbeatState($heartbeat['box']['state']);
+		
+		// Save the new state
+		try {	
+			$this->Netspresso->save();
+		} catch(Exception $e) { 
+				$this->log("NetspressoController::heartbeat caught exception: " . $e->getMessage());
+				$this->log("NetspressoController::heartbeat input data: " . var_export($heartbeat, true));
+				throw new InternalErrorException(__('The state could not be saved. Please, try again.'));
+		}
 
 		// Create the response object
 		$response = $this->create_response_object_reply($action['code'], $action['message']);
@@ -207,6 +225,6 @@ class NetspressoController extends AppController {
 		$this->set(array('response' => $response));
 		$this->set('_serialize', array('response'));
 
-	} // end of heartbeat
+	} // end of heartbeat	
 
 } // end of class
