@@ -9,6 +9,7 @@ $l = array(
 	'description' => 'This module etablish communication with the nETSpresso server', //this description will appear in the Start menu -> modules section
 	
 	'grid_title' => 'Events',
+	'dialog_title' => 'Resource Request',
 	'user_id' => 'User Id',
 	'calendar_id' => 'Calendar Id',
 	'calendar_name' => 'Requestor',
@@ -22,7 +23,6 @@ $l = array(
 	'firstname' => 'First name',
 	'lastname' => 'Last name',
 
-	
 );
 
 

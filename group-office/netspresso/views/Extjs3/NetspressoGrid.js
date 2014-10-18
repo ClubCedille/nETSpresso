@@ -16,12 +16,11 @@ GO.netspresso.NetspressoGrid = function(config){
 	config.loadMask=true; //Mask the grid when it is loading data
 	
 	//This dialog will be opened when double clicking a row or calling showEditDialog()
-	//config.editDialogClass = GO.netspresso.NetspressoDialog;
-	//config.editDialogClass = GO.calendar.EventDialog;
+	config.editDialogClass = GO.netspresso.NetspressoDialog;
 // 	config.editDialogClass = function(){
 // 		if(!GO.calendar.showEventDialog)
 // 			GO.calendar.showEventDialog = new GO.calendar.showEventDialog();
-// 		GO.calendar.showEventDialog({event_id: this.link_id});
+// 		GO.calendar.showEventDialog({event_id: this.event_id});
 // 	},
 	
 	//Configuring the column model
@@ -39,22 +38,22 @@ GO.netspresso.NetspressoGrid = function(config){
 			},
 			width: 40,
 			align: "right"
-// 		},{
-// 			header: GO.netspresso.lang.resource_id,
-// 			dataIndex: 'resource_id',
-// 			//width: 40
 		},{
+// 			header: GO.netspresso.lang.resource_id,
+// 			dataIndex: 'event_id',
+//  			//width: 40
+// 		},{
 			header: GO.netspresso.lang.calendar_name,
 			dataIndex: 'calendar_name',
-			width: 260
+			//width: 200
 		},{
 			header: GO.netspresso.lang.start_time,
 			dataIndex: 'start_time',
-			width: 120
+//			width: 140
 		},{
 			header: GO.netspresso.lang.end_time,
 			dataIndex: 'end_time',
-			width: 120
+//			width: 140
 		},{
 			header: GO.netspresso.lang.status,
 			dataIndex: 'status',
@@ -144,5 +143,19 @@ GO.netspresso.NetspressoGrid = function(config){
 
 //Extend the NetspressoGrid from GridPanel
 Ext.extend(GO.netspresso.NetspressoGrid, GO.grid.GridPanel,{
-	
+
+// 	afterRender : function()
+// 	{
+// 		GO.calendar.ListGrid.superclass.afterRender.call(this);
+// 
+// 		this.on("rowdblclick", function(grid, rowIndex, e){
+// 
+// 				GO.calendar.showEventDialog({
+// 					event_id: record.data.event_id
+// 				});
+// 
+// 		}, this);
+// 
+// 	},
+
 });
