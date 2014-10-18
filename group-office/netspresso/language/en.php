@@ -10,6 +10,7 @@ $l = array(
 	
 	'grid_title' => 'Events',
 	'dialog_title' => 'Resource Request',
+	'config_title' => 'Configuration',
 	'user_id' => 'User Id',
 	'calendar_id' => 'Calendar Id',
 	'calendar_name' => 'Requestor',

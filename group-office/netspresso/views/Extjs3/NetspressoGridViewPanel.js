@@ -15,15 +15,15 @@ GO.netspresso.NetspressoPanel = Ext.extend(GO.DisplayPanel,{
 // 		GO.calendar.showEventDialog({event_id: this.link_id});
 // 	},
 
-// 	editHandler : function(){
-// 		if(!GO.calendar.showEventDialog)
-// 			GO.calendar.showEventDialog = new GO.calendar.showEventDialog();
-// 		GO.calendar.showEventDialog({event_id: this.link_id});
-// 	},
-
+	editHandler : function(){
+		if(!GO.calendar.showEventDialog)
+			GO.calendar.showEventDialog = new GO.calendar.showEventDialog();
+		GO.calendar.showEventDialog({event_id: this.link_id});
+	},
+		
 	initComponent : function(){	
 		
-		this.loadUrl=('netspresso/netspresso/store');
+		this.loadUrl=('netspresso/netspresso/display');
 		
 		this.template = 
 				'<table class="display-panel" cellpadding="0" cellspacing="0" border="0">'+
@@ -32,11 +32,11 @@ GO.netspresso.NetspressoPanel = Ext.extend(GO.DisplayPanel,{
 					'</tr>'+
 					'<tr>'+
 						'<td>'+GO.netspresso.lang.event_id+':</td>'+
-						'<td>{temperature}</td>'+
+						'<td>{event_id}</td>'+
 					'</tr>'+
 					'<tr>'+
 						'<td>'+GO.netspresso.lang.start_time+':</td>'+
-						'<td>{date}</td>'+
+						'<td>{start_time}</td>'+
 					'</tr>'+
 					'<tr>'+
 						'<td>'+GO.netspresso.lang.end_time+':</td>'+

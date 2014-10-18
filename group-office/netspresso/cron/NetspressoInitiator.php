@@ -152,17 +152,23 @@ class GO_Netspresso_Cron_NetspressoInitiator extends GO_Base_Cron_AbstractCron {
 		
 		// Prepare the request body
 		$message = array (
-			'uuid'				=> $event->uuid,
-			'event_id'			=> $event->resource_event_id,
-			'resource_event_id'	=> $event->resource_event_id,
-			'calendar_id'		=> $event->calendar_id,
-			'user_id'			=> $event->user_id,
-			'username'			=> $event->user->getName(),
-			'start_time'		=> date(DateTime::ISO8601, $event->start_time),
-			'end_time'			=> date(DateTime::ISO8601, $event->end_time),
-			'subjet'			=> $event->name,
-			'status'			=> $event->status
-		);			
+			'box' => array (
+				'name'  => 'netspresso01',
+				'state' => 'Ready'
+			),
+			'event' => array (
+				'uuid'				=> $event->uuid,
+				'event_id'			=> $event->resource_event_id,
+				'resource_event_id'	=> $event->resource_event_id,
+				'calendar_id'		=> $event->calendar_id,
+				'user_id'			=> $event->user_id,
+				'username'			=> $event->user->getName(),
+				'start_time'		=> date(DateTime::ISO8601, $event->start_time),
+				'end_time'			=> date(DateTime::ISO8601, $event->end_time),
+				'subjet'			=> $event->name,
+				'status'			=> $event->status
+			)
+		);
 		GO::debug("Netspresso::sendToNetspreso (" . var_export($message, true) . ")");
 
 		// Set the destination URL
@@ -185,6 +191,8 @@ class GO_Netspresso_Cron_NetspressoInitiator extends GO_Base_Cron_AbstractCron {
 			
     		if (200 == $response->getStatus()) {
         		GO::debug("Netspresso::sendToNetspreso response : " . $response->getBody());
+        		
+        		$response = json_decode($response->getBody(), true);
 
     		} else {    	
     			GO::debug("Netspresso::sendToNetspreso Unexpected response: " . $response->getStatus() . ' ' . $response->getReasonPhrase());

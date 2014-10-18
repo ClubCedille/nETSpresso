@@ -1,4 +1,5 @@
 modules/netspresso/views/Extjs3/NetspressoPanel.js
 modules/netspresso/views/Extjs3/NetspressoGrid.js
 modules/netspresso/views/Extjs3/NetspressoDialog.js
+modules/netspresso/views/Extjs3/NetspressoConfig.js
 modules/netspresso/views/Extjs3/MainPanel.js

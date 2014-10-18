@@ -20,15 +20,16 @@ GO.netspresso.MainPanel = function(config){
 		border:true
 	});
 	
-	this.centerPanel.on("delayedrowselect",function(grid, rowIndex, r){
-		this.eastPanel.load(r.data.id);		
-	}, this);
+// 	this.centerPanel.on("delayedrowselect",function(grid, rowIndex, r){
+// 		this.eastPanel.load(r.data.id);		
+// 	}, this);
 
-	this.centerPanel.store.on('load', function(){
-			this.eastPanel.reset();
-	}, this);
+// 	this.centerPanel.store.on('load', function(){
+// 			this.eastPanel.reset();
+// 	}, this);
 	
-	this.eastPanel = new GO.netspresso.NetspressoPanel({
+ 	this.eastPanel = new GO.netspresso.NetspressoPanel({	
+//	this.eastPanel = new GO.netspresso.NetspressoConfig({
 		region:'east',
 		id:'pm-east-panel',
 		width:440,

@@ -39,10 +39,6 @@ GO.netspresso.NetspressoGrid = function(config){
 			width: 40,
 			align: "right"
 		},{
-// 			header: GO.netspresso.lang.resource_id,
-// 			dataIndex: 'event_id',
-//  			//width: 40
-// 		},{
 			header: GO.netspresso.lang.calendar_name,
 			dataIndex: 'calendar_name',
 			//width: 200
@@ -143,19 +139,5 @@ GO.netspresso.NetspressoGrid = function(config){
 
 //Extend the NetspressoGrid from GridPanel
 Ext.extend(GO.netspresso.NetspressoGrid, GO.grid.GridPanel,{
-
-// 	afterRender : function()
-// 	{
-// 		GO.calendar.ListGrid.superclass.afterRender.call(this);
-// 
-// 		this.on("rowdblclick", function(grid, rowIndex, e){
-// 
-// 				GO.calendar.showEventDialog({
-// 					event_id: record.data.event_id
-// 				});
-// 
-// 		}, this);
-// 
-// 	},
 
 });
