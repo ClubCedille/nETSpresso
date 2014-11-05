@@ -9,6 +9,12 @@ Programme de contrôle de la machine à expresso «nETSpresso»
 #include <AD595.h>
 #include "EmonLib.h"
 #include <SoftwareSerial.h>
+#include <JsonGenerator.h>
+//#include <MemoryFree.h>
+using namespace ArduinoJson::Generator;
+#include <JsonParser.h>
+//using namespace ArduinoJson::Parser;
+
 
 #define LED_SWITCH 5
 #define REL_LOCK 6
@@ -21,7 +27,7 @@ SoftwareSerial lcd = SoftwareSerial(0,2);
 byte mac[] = { 0x90, 0xA2, 0xDA, 0x0E, 0xDC, 0x1E };
 
 // Adresse IP serveur distant:
-char server[] = "192.168.0.104";
+char server[] = "192.168.0.116";
 
 // Adresse IP par défaut de arduino si DHCP indisponible:
 IPAddress ip(192,168,0,177);
@@ -115,14 +121,14 @@ void setup()
   lcd.write(0x48);
   delay(10);
 
-  delay(5000);
+  delay(1000);
 
   // Message de bienvenue sériel:
-  Serial.println(" -----------------------");
-  Serial.println(" Bienvenue à nETSpresso!");
-  Serial.println(" -----------------------");
-  Serial.println("");
-  Serial.println("--> Initialisation, veuillez patienter...");
+  Serial.println(F(" -----------------------"));
+  Serial.println(F(" Bienvenue à nETSpresso!"));
+  Serial.println(F(" -----------------------"));
+  Serial.println();
+  Serial.println(F("--> Initialisation, veuillez patienter..."));
   
   // Message de bienvenue sur LCD:
   lcd.print("   nETSpresso");
@@ -130,30 +136,32 @@ void setup()
   // Configuration du capteur de courant:  
   emon1.current(5, calib); // (Pin number, calibration value)
   emon2.current(4, calib); // (Pin number, calibration value)
-  /*
+  
   // Configuration de la connection ethernet:
   if (Ethernet.begin(mac) == 0) // (Mac address)
   {
-    Serial.println("--> DHCP indisponible");
-    Serial.println("--> Tentative de connection avec adresse IP par défaut:");
+    Serial.println(F("--> DHCP indisponible"));
+    Serial.println(F("--> Tentative de connection avec adresse IP par défaut:"));
     Ethernet.begin(mac, ip); // (Mac address, default arduino ip number)
   }
-  
+
+  /*
   // Délais pour initialisation du Ethernet Shield:
-  Serial.println("--> Connection...");
+  Serial.println(F("--> Connection..."));
   delay(2000);
   
   // Si la connection est réussie, affichage sur terminal sériel:
   if (client.connect(server, 80)) // (Serveur distant, port)
   {
-    Serial.println("--> Connecté");
+    Serial.println(F("--> Connecté"));
   }
   
   // Si la connection a échouée
   else
   {
-    Serial.println("--> Connection impossible!");
-  }*/
+    Serial.println(F("--> Connection impossible!"));
+  }
+  */
   
   for(int i=0; i<4; i++){
     digitalWrite(LED_SWITCH, HIGH);
@@ -161,6 +169,8 @@ void setup()
     digitalWrite(LED_SWITCH, LOW);
     delay(400);
   }
+  
+  set_state(STANDBY);
 }
 
 //--------------------//
@@ -169,7 +179,7 @@ void setup()
 int temperature()
 {
   //int temp;
-  Serial.println("TEMPERATURE (°C):");
+  Serial.println(F("TEMPERATURE (°C):"));
   temp = thermocouple.measure(TEMPC);
   Serial.println(temp);
   Serial.println("");
@@ -181,7 +191,7 @@ int temperature()
 //------------------------------//
 float ac_power()
 {
-  Serial.println("AC POWER CURRENT SENSOR (A):");
+  Serial.println(F("AC POWER CURRENT SENSOR (A):"));
   Irms1 = emon1.calcIrms(1480);
   Serial.println(Irms1);
   Serial.println("");
@@ -193,7 +203,7 @@ float ac_power()
 //-------------------------------//
 float ac_manual()
 {
-  Serial.println("AC MANUAL MODE CURRENT SENSOR (A):");
+  Serial.println(F("AC MANUAL MODE CURRENT SENSOR (A):"));
   Irms2 = emon2.calcIrms(1480);
   Serial.println(Irms2);
   Serial.println("");
@@ -294,6 +304,37 @@ int get_state()
   return state;
 }
 
+//-----------------//
+// GET STATE LABEL //
+//-----------------//
+String get_state_label()
+{
+  switch(get_state()){
+      case STANDBY:
+      return "Stand-By";
+      break;
+    
+    case WARMING:
+      return "Warming-Up";
+      break;
+    
+    case READY:
+      return "Ready";
+      break;
+    
+    case COOLING:
+      return "Cooling-Down";
+      break;
+    
+    case LOCKED:
+      return "Locked";
+      break;
+    
+    default:
+      return "Stand-By";
+      break;
+  }
+}
 
 //-------------------//
 // CHECK MANUAL MODE //
@@ -322,12 +363,33 @@ int manual_cycles()
 
 int send_event()
 {
-  String PostData;
-  //String PostData="{\"path\":\"netspresso.relay.01\",\"value\":3,\"units\":\"watts\",\"epoch\":\"2014-08-09T05:46:06-0400\"}";
+  
   //int temp;
-  Serial.println("Event!");
-  Serial.println("");
+  Serial.println(F("Event!"));
+  Serial.println();
   delay(500);
+  
+  // if the server's disconnected, stop the client:
+  if (!client.connected())
+  {
+    Serial.println();
+    Serial.println(F("--> Déconnecté..."));
+    Serial.println();
+    client.stop();
+    
+    if (client.connect(server, 80))
+    {
+      Serial.println(F("--> Connecté"));
+    }
+    else
+    {
+      // Si la connection au serveurs est impossible:
+      Serial.println(F("--> Connection impossible!"));
+      //return;
+    }  
+  }
+  
+  
   
   // Capture de la température
   temp = temperature();
@@ -336,6 +398,11 @@ int send_event()
   Irms1 = ac_power();
   Irms2 = ac_manual();
   
+  // Current state
+  char state_label[13] = { '\0' };
+  get_state_label().toCharArray(state_label, 13);
+  
+  Serial.println(state_label);
   // Affichage sur LCD
   //aff();
 /*
@@ -349,33 +416,103 @@ int send_event()
   relay_deactivate(REL_WARM);
   delay(1000);
 */  
-  /*
+  
   // Informations à transférer au serveur:
-  PostData="{\"temperature\":temp,\"unite1\":\"degre_celcius\",\"courant\":Irms,\"unite2\":\"Amperes\"}";
-  Serial.println(PostData);
+  //PostData="{\"temperature\":temp,\"unite1\":\"degre_celcius\",\"courant\":Irms,\"unite2\":\"Amperes\"}";
+  
+  //JsonObject<4> power;
+  //power["sensor"] = "netspresso01.ac_power";
+  //power["value"] = "110";
+  //power["units"] = "Volts";
+  //power["adquired"] = "2014-08-09T05:46:06-0400";
+  
+  //JsonArray<1> metrics;
+  //metrics.add(power);
+  
+  JsonObject<3> box;
+  box["name"] = "netspresso01";
+  //box["state"] = "Ready";
+  box["state"] = state_label;
+  box["temperature"] = temp;
+  
+  JsonObject<2> data;
+  data["box"] = box;
+  //data["metrics"] = metrics;
+  
+  char databuffer[99] = { '\0' };
+  //char *databuffer = new char[200];
+  data.printTo(databuffer, sizeof(databuffer));
+  String strdata = databuffer;
+  //free(&power);
+  //free(&metrics);
+  //free(&box);
+  //delete(&data);
+  
+  Serial.println(strdata);
+  Serial.println(strdata.length());
+  
+  //Serial.println(strdata);
+  //data.printTo(Serial);
+  
+  //String PostData;
+  //String PostData="{\"path\":\"netspresso.relay.01\",\"value\":3,\"units\":\"watts\",\"epoch\":\"2014-08-09T05:46:06-0400\"}";
+  //String PostData ="{\"box\":{\"name\":\"netspresso01\",\"state\":\"Ready\",\"temperature\":\"30\"}}";
+  //Serial.println(PostData);
+  
   
   // Requête HTTP:
-  client.println("POST /netspresso/metric.json HTTP/1.1");
-  client.println("Host: 192.168.0.104"); 
-  client.println("Connection: close");
-  client.println("Content-Type: application/json;");
-  client.print("Content-Length: ");
-  client.println(PostData.length());
+  client.println(F("POST /netspresso/heartbeat.json HTTP/1.1"));
+  client.println(F("Host: 192.168.0.104")); 
+  client.println(F("Content-Type: application/json;"));
+  client.print(F("Content-Length: "));
+  //client.println(PostData.length());
+  client.println(strdata.length());
+  //client.println("Connection: close"); 
   client.println();   
-  client.println(PostData);
+  //client.println(PostData);
+  client.println(strdata);
+  //data.printTo(client);
+  Serial.println("");
+  Serial.println(F("Délais d'attente..."));  
 
-  Serial.println("Délais d'attente...");  
-  delay(1000);
-
-  Serial.print("Réponse du serveur:");
+  while(!client.available()) {
+    delay(500);
+  }
+  
+  Serial.print(F("Réponse du serveur:"));
+  
+  char json[99] = { '\0' };
+  int i = 0;
+  
   while(client.available())
   {
-    char c = client.read();
+    char c = client.read();    
+    if((c == '{') or (i > 0)){
+      json[i] = c;
+      i = i + 1;
+    }
     Serial.print(c);
   }
-  Serial.println("");*/
+
+  Serial.println(json);
+
+  // Parse the Json response
+  ArduinoJson::Parser::JsonParser<16> parser;
+  //char json[99] = "{\"response\":{\"code\":\"002\",\"message\":\"Cold-Down\"}}";
+ 
+  ArduinoJson::Parser::JsonObject root = parser.parse(json);
+  if (!root.success())
+  {
+    Serial.println("JsonParser.parse() failed");
+    return DO_NOTHING;
+  }
+  ArduinoJson::Parser::JsonObject response = root["response"];
+  char* code = response["code"];
   
-  return DO_NOTHING;
+  Serial.print(F("Return code: "));
+  Serial.println(atoi(code));
+  
+  return atoi(code);
 }
 
 //---------//
@@ -462,6 +599,12 @@ void hold_state()
 
 }
 
+int freeRam() {
+  extern int __heap_start, *__brkval;
+  int v;
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
+}
+
 //--------------------//
 // ROUTINE PRINCIPALE //
 //--------------------//
@@ -470,28 +613,12 @@ void loop()
 {
   do
   {
-    delay(1000);
-    //delay(5000);
-    /*
-    // if the server's disconnected, stop the client:
-    if (!client.connected())
-    {
-      Serial.println();
-      Serial.println("--> Déconnecté...");
-      Serial.println("");
-      client.stop();
-      
-      if (client.connect(server, 80))
-      {
-        Serial.println("--> Connecté");
-      }
-      else
-      {
-        // Si la connection au serveurs est impossible:
-        Serial.println("--> Connection impossible!");
-        //return;
-      }  
-    }*/
+    delay(4000);
+    update_lcd_display();
+    
+    //Serial.println(F("Memory " ));
+    //Serial.println(freeRam() );
+
     
     action = send_event();
     
@@ -517,3 +644,5 @@ void loop()
 
   } while(true);  
 }
+
+
