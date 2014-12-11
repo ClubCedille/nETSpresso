@@ -15,28 +15,29 @@ using namespace ArduinoJson::Generator;
 #include <JsonParser.h>
 //using namespace ArduinoJson::Parser;
 
-
+// Aruidno output pins
 #define LED_SWITCH 5
 #define REL_LOCK 6
 #define REL_WARM 7
 
+// Relay states
+#define REL_WARM_STATE 0
+#define REL_LOCK_STATE 1
+
 // Create a software serial port!
-SoftwareSerial lcd = SoftwareSerial(0,2); 
+SoftwareSerial lcd = SoftwareSerial(0,2);
+
+// Adresse IP serveur distant:
+char server[] = "192.168.1.57";
 
 // Adresse MAC Arduino Ethernet:
 byte mac[] = { 0x90, 0xA2, 0xDA, 0x0E, 0xDC, 0x1E };
-
-// Adresse IP serveur distant:
-char server[] = "192.168.0.116";
-
+  
 // Adresse IP par défaut de arduino si DHCP indisponible:
-IPAddress ip(192,168,0,177);
+IPAddress ip(192,168,1,20);
 
 // Initialisation de la librairie du client Ethernet:
 EthernetClient client;
-
-// Initialisation du thermocouple:
-AD595 thermocouple;
 
 // Capteur de courant
 float Irms1;
@@ -49,6 +50,8 @@ int compteur = 0;
 int flag = 0;
 int temp = 0;
 int manual_mode = 0;
+
+int relays_state[] = {0,0};
 
 #define STANDBY 0
 #define WARMING 1
@@ -72,6 +75,12 @@ int action=DO_NOTHING;
 
 void setup()
 {
+  delay(3000);
+  // Initialisation communication sérielle et attente de l'ouverture du port:
+  Serial.begin(9600);
+  Serial.println(F("Memory Début" ));
+  
+  Serial.println(freeRam() );
   // Initialise switch LED
   pinMode(LED_SWITCH, OUTPUT);
   
@@ -79,8 +88,6 @@ void setup()
   pinMode(REL_LOCK, OUTPUT);
   pinMode(REL_WARM, OUTPUT);  
   
-  // Initialisation communication sérielle et attente de l'ouverture du port:
-  Serial.begin(9600);
   lcd.begin(9600);
   
   // set the size of the display if it isn't 16x2 (you only have to do this once)
@@ -95,7 +102,7 @@ void setup()
   // set the contrast
   lcd.write(0xFE);
   lcd.write(0x50);
-  lcd.write(200);
+  lcd.write(220);
   delay(10);
   
   // set the brightness
@@ -137,11 +144,12 @@ void setup()
   emon1.current(5, calib); // (Pin number, calibration value)
   emon2.current(4, calib); // (Pin number, calibration value)
   
-  // Configuration de la connection ethernet:
+  // Configuration de la connection ethernet:  
   if (Ethernet.begin(mac) == 0) // (Mac address)
   {
     Serial.println(F("--> DHCP indisponible"));
     Serial.println(F("--> Tentative de connection avec adresse IP par défaut:"));
+
     Ethernet.begin(mac, ip); // (Mac address, default arduino ip number)
   }
 
@@ -171,6 +179,8 @@ void setup()
   }
   
   set_state(STANDBY);
+  Serial.println(F("Memory Fin" ));
+  Serial.println(freeRam() );
 }
 
 //--------------------//
@@ -178,7 +188,9 @@ void setup()
 //--------------------//
 int temperature()
 {
-  //int temp;
+  // Initialisation du thermocouple:
+  AD595 thermocouple;
+
   Serial.println(F("TEMPERATURE (°C):"));
   temp = thermocouple.measure(TEMPC);
   Serial.println(temp);
@@ -215,12 +227,12 @@ float ac_manual()
 //-------------------------//
 void update_lcd_display()
 {
-  // Couleur rouge
+  // Couleur
   lcd.write(0xFE);
   lcd.write(0xD0);
+  lcd.write(0x1);
   lcd.write(0x255);
-  lcd.write(0x255);
-  lcd.write(0x255);
+  lcd.write(0x1);
   // Efface l'écran
   lcd.write(0xFE);
   lcd.write(0x58);
@@ -228,9 +240,12 @@ void update_lcd_display()
   lcd.write(0xFE);
   lcd.write(0x48);
   // Affiche température
-  lcd.print("Temperature= ");
+  lcd.print("Temperature: ");
   lcd.print(temp);
-  
+  lcd.write(0xFE);
+  lcd.write(0x47);
+  lcd.write(1);
+  lcd.write(2);
   
   switch(get_state()){
   case STANDBY:
@@ -277,6 +292,15 @@ void update_lcd_display()
 void relay_activate(int relay)
 {
   digitalWrite(relay,HIGH);
+  switch (relay) {
+    case REL_WARM:
+      relays_state[REL_WARM_STATE] = 1;
+      break;
+    case REL_LOCK:
+      relays_state[REL_LOCK_STATE] = 1;
+      break;
+  }
+  
 }
 
 //------------------//
@@ -285,6 +309,14 @@ void relay_activate(int relay)
 void relay_deactivate(int relay)
 {
   digitalWrite(relay,LOW);
+    switch (relay) {
+    case REL_WARM:
+      relays_state[REL_WARM_STATE] = 0;
+      break;
+    case REL_LOCK:
+      relays_state[REL_LOCK_STATE] = 0;
+      break;
+  }
 }
 
 //-----------//
@@ -363,33 +395,29 @@ int manual_cycles()
 
 int send_event()
 {
-  
+  Serial.println(F("Memory event debut" ));
+  Serial.println(freeRam() );
   //int temp;
-  Serial.println(F("Event!"));
+  Serial.println(F(" *** Événement ***"));
   Serial.println();
   delay(500);
   
-  // if the server's disconnected, stop the client:
-  if (!client.connected())
-  {
-    Serial.println();
-    Serial.println(F("--> Déconnecté..."));
-    Serial.println();
-    client.stop();
-    
-    if (client.connect(server, 80))
-    {
-      Serial.println(F("--> Connecté"));
-    }
-    else
-    {
-      // Si la connection au serveurs est impossible:
-      Serial.println(F("--> Connection impossible!"));
-      //return;
-    }  
+  client.stop();
+  if (client.connect(server, 80)) {
+    Serial.println(F("--> Connecté!"));
   }
-  
-  
+  else
+  {
+    // Si la connection au serveurs est impossible:
+    Serial.println(F("--> Déconnecté du serveur..."));
+    do {
+      Serial.println(F("--> Tentative de reconnection..."));
+      delay(1000);
+    } while (!client.connect(server,80));
+    Serial.println(F("--> Reconnecté!"));
+  } 
+  Serial.println(F("Memory connect client fin" ));
+  Serial.println(freeRam() ); 
   
   // Capture de la température
   temp = temperature();
@@ -428,79 +456,133 @@ int send_event()
   
   //JsonArray<1> metrics;
   //metrics.add(power);
+  Serial.println(F("Memory json debut" ));
+  Serial.println(freeRam() );
+  
+  JsonObject<4> sensors;
+  
+  JsonArray<1> leds;
+  JsonArray<2> relays;
+  JsonArray<2> current;
+  JsonArray<1> temperatures;
+  
+  leds.add(0);
+  relays.add(relays_state[REL_WARM_STATE]);
+  relays.add(relays_state[REL_LOCK_STATE]);
+  
+  JsonObject<2> current_power;
+  current_power["u"] = "A";
+  current_power["v"] = Irms1;
+  current.add(current_power);
+  
+  JsonObject<2> current_manual;
+  current_manual["u"] = "A";
+  current_manual["v"] = Irms2;
+  current.add(current_manual);  
+  
+  JsonObject<1> main_temperature;
+  main_temperature["u"] = "C";
+  main_temperature["v"] = temp;
+  temperatures.add(main_temperature); 
+  
+  sensors["led"] = leds;
+  sensors["relay"] = relays;
+  sensors["current"] = current;
+  sensors["temperature"] = temperatures;
   
   JsonObject<3> box;
-  box["name"] = "netspresso01";
+  box["n"] = "netspresso01";
   //box["state"] = "Ready";
-  box["state"] = state_label;
-  box["temperature"] = temp;
+  box["s"] = get_state();
+  box["t"] = temp;
   
   JsonObject<2> data;
   data["box"] = box;
-  //data["metrics"] = metrics;
+  data["sensors"] = sensors;
+
   
-  char databuffer[99] = { '\0' };
+  char databuffer[299] = { '\0' };
   //char *databuffer = new char[200];
   data.printTo(databuffer, sizeof(databuffer));
-  String strdata = databuffer;
+   
   //free(&power);
   //free(&metrics);
   //free(&box);
   //delete(&data);
   
-  Serial.println(strdata);
-  Serial.println(strdata.length());
-  
-  //Serial.println(strdata);
-  //data.printTo(Serial);
-  
   //String PostData;
   //String PostData="{\"path\":\"netspresso.relay.01\",\"value\":3,\"units\":\"watts\",\"epoch\":\"2014-08-09T05:46:06-0400\"}";
   //String PostData ="{\"box\":{\"name\":\"netspresso01\",\"state\":\"Ready\",\"temperature\":\"30\"}}";
-  //Serial.println(PostData);
-  
+  Serial.print(F("Requete au serveur:"));
+  Serial.println(databuffer);
+  Serial.println(strlen(databuffer));
   
   // Requête HTTP:
+  Serial.println(F("Memory http" ));
+  Serial.println(freeRam() );
   client.println(F("POST /netspresso/heartbeat.json HTTP/1.1"));
-  client.println(F("Host: 192.168.0.104")); 
+  client.println(F("Host: 192.168.1.57")); 
   client.println(F("Content-Type: application/json;"));
   client.print(F("Content-Length: "));
-  //client.println(PostData.length());
-  client.println(strdata.length());
+
+
+  client.println(strlen(databuffer));
   //client.println("Connection: close"); 
   client.println();   
   //client.println(PostData);
-  client.println(strdata);
+  //client.println(strdata);
+  client.println(databuffer);
   //data.printTo(client);
+  Serial.println(F("Memory http fin" ));
+  Serial.println(freeRam() );
+
   Serial.println("");
-  Serial.println(F("Délais d'attente..."));  
+  Serial.println(F("Délais d'attente..."));
+
+  delay(5000);  
 
   while(!client.available()) {
+/*  Serial.println(F("--> Déconnecté du client, tentative de reconnection..."));
+    //client.stop();
     delay(500);
-  }
+    if (client.connect(server, 80))
+    {
+      Serial.println(F("--> Connecté!"));
+    }
+    else
+    {
+      // Si la connection au serveurs est impossible:
+      Serial.println(F("--> Connection impossible..."));
+      //return;
+    } 
+*/}
   
   Serial.print(F("Réponse du serveur:"));
   
-  char json[99] = { '\0' };
+  //char json[99] = { '\0' };
+  memset(databuffer, 0, sizeof(databuffer));
   int i = 0;
   
   while(client.available())
   {
     char c = client.read();    
     if((c == '{') or (i > 0)){
-      json[i] = c;
+      //json[i] = c;
+      databuffer[i] = c;
       i = i + 1;
     }
     Serial.print(c);
   }
 
-  Serial.println(json);
-
+  //Serial.println(json);
+  Serial.println(databuffer);
+  Serial.println(F("Memory" ));
+  Serial.println(freeRam() );
   // Parse the Json response
   ArduinoJson::Parser::JsonParser<16> parser;
   //char json[99] = "{\"response\":{\"code\":\"002\",\"message\":\"Cold-Down\"}}";
  
-  ArduinoJson::Parser::JsonObject root = parser.parse(json);
+  ArduinoJson::Parser::JsonObject root = parser.parse(databuffer);
   if (!root.success())
   {
     Serial.println("JsonParser.parse() failed");
@@ -614,10 +696,13 @@ void loop()
   do
   {
     delay(4000);
+    Serial.println(F("Memory loop begin (memory disp)" ));
+    Serial.println(freeRam() );
+
     update_lcd_display();
     
-    //Serial.println(F("Memory " ));
-    //Serial.println(freeRam() );
+    Serial.println(F("Memory loop end" ));
+    Serial.println(freeRam() );
 
     
     action = send_event();
