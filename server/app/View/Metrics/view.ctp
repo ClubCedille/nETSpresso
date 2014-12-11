@@ -33,7 +33,7 @@
 		</dd>
 		<dt><?php echo __('Adquired'); ?></dt>
 		<dd>
-			<?php echo h($metric['Metric']['adquired']); ?>
+			<?php echo h($metric['Metric']['acquired']); ?>
 			&nbsp;
 		</dd>
 	</dl>

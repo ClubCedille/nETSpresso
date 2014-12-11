@@ -9,7 +9,7 @@
 			<th><?php echo $this->Paginator->sort('sensor'); ?></th>
 			<th><?php echo $this->Paginator->sort('value'); ?></th>
 			<th><?php echo $this->Paginator->sort('units'); ?></th>
-			<th><?php echo $this->Paginator->sort('adquired'); ?></th>
+			<th><?php echo $this->Paginator->sort('acquired'); ?></th>
 			<th class="actions"><?php echo __('Actions'); ?></th>
 	</tr>
 	</thead>
@@ -22,7 +22,7 @@
 		<td><?php echo h($metric['Metric']['sensor']); ?>&nbsp;</td>
 		<td><?php echo h($metric['Metric']['value']); ?>&nbsp;</td>
 		<td><?php echo h($metric['Metric']['units']); ?>&nbsp;</td>
-		<td><?php echo h($metric['Metric']['adquired']); ?>&nbsp;</td>
+		<td><?php echo h($metric['Metric']['acquired']); ?>&nbsp;</td>
 		<td class="actions">
 			<?php echo $this->Html->link(__('View'), array('action' => 'view', $metric['Metric']['id'])); ?>
 			<?php echo $this->Html->link(__('Edit'), array('action' => 'edit', $metric['Metric']['id'])); ?>

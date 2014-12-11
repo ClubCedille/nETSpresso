@@ -7,7 +7,7 @@
 		echo $this->Form->input('sensor');
 		echo $this->Form->input('value');
 		echo $this->Form->input('units');
-		echo $this->Form->input('adquired');
+		echo $this->Form->input('acquired');
 	?>
 	</fieldset>
 <?php echo $this->Form->end(__('Submit')); ?>
