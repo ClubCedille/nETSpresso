@@ -42,10 +42,92 @@ class NetspressoController extends AppController {
 //$this->request->addDetector('json',array('callback'=>function($req){return $req->accepts('application/json');}));
 //  - add security on headers X-Auth-Token: tr9D96HJtlcH
 // For debuging
-//$this->log("NetspressoController::beforeFilter input data: " . var_export($this->request,true));		
+//$this->log("NetspressoController::beforeFilter input data: " . var_export($this->request,true));
 
 		parent::beforeFilter();
 }
+
+
+/**
+ * method json_decompress
+ *
+ * @throws BadRequestException, InternalErrorException, Exception
+ * @param  string
+ * @return array
+ */
+
+private function json_decompress($received){
+    $build = array();
+    //$received = json_decode($input);
+    $states = array("Stand-By", "Warming-Up", "Ready", "Cooling-Down", "Locked");
+
+    // Build basic box info
+    $build["box"] = array(
+        "name" => $received["box"]["n"],
+        "state" => $states[$received["box"]["s"]],
+        "temperature" => $received["box"]["t"],
+    );
+
+    //Keep the box name as an easy to access var
+    $boxName = $build["box"]["name"];
+
+    // Build metrics
+    $build["metrics"] = array();
+
+	if (!is_array($received["sensors"])) return $build;
+	
+    //foreach(array_keys($received["sensors"]) as $sensorType => $values) {
+    foreach($received["sensors"] as $sensorType => $values) {
+        // Go through each sensor type
+        $sensorIndex = 1;
+        foreach($values as $val) {
+            // And each of the individual sensors within
+            $nameFormat = '%s.%s.%02d';
+            $sensor = array(
+                //Build the sensor name
+                "sensor" => sprintf($nameFormat, $boxName, $sensorType, $sensorIndex),
+                "acquired" => date("c")
+            );
+
+            if(!is_array($val)) {
+                // If the value is not an object, interpret it as no unit
+                $sensor["units"] = "Bool";
+                $sensor["value"] = $val;
+            } else {
+                // When the value is an object, map the keys
+                $sensor["units"] = $this->expand_units($val["u"]);
+                $sensor["value"] = $val["v"];
+            }
+
+            // Add the sensor to the metrics array
+            array_push($build["metrics"], $sensor);
+            $sensorIndex++;
+        }
+    }
+
+    return $build;
+}
+
+/**
+ * method netspresso_expand_units
+ *
+ * @throws none
+ * @param  string
+ * @return string
+ */
+private function expand_units($unitType) {
+    switch($unitType) {
+        case "V":
+            return "Volts";
+        case "C":
+        	return "°C";
+        case "A":
+            return "Amperes";
+        default:
+            return $unitType;
+    }
+}
+
 
 /**
  * method metric
@@ -112,7 +194,7 @@ class NetspressoController extends AppController {
 		// Preapare response object reply
 		//
 		$datetime = new DateTime();
-		$response = array (	'date' => $datetime->format(DateTime::ISO8601),
+		$response = array (	//'date' => $datetime->format(DateTime::ISO8601),
 							'code' => $code,
 							'message' => $message,);
 		return $response;
@@ -168,7 +250,7 @@ class NetspressoController extends AppController {
 		$this->request->allowMethod('post');
 
 		// Get JSON dencoded data received from client
-		$heartbeat = $this->request->data;
+		$heartbeat = $this->json_decompress($this->request->data);
 
 		// Throw an error in case JSON data is not properly decoded
 		if(is_null($heartbeat) or $heartbeat == false) {
@@ -176,13 +258,16 @@ class NetspressoController extends AppController {
 		}
 
 		//For debuging
-		//$this->log("NetspressoController::heartbeat input data: " . var_export($heartbeat, true));
+		$this->log("NetspressoController::heartbeat input data: " . var_export($heartbeat, true));
 
-		// Save metrics 
-		$this->save_metrics($heartbeat['metrics']);
+		// Save metrics
+		if(!is_null($heartbeat['metrics']) and $heartbeat['metrics'] != false) {
+			$this->save_metrics($heartbeat['metrics']);
+		}
 		
 		// Initialize the nETSpresso object
-		$this->Netspresso->loadByMac($heartbeat['network']['mac']);
+		//$this->Netspresso->loadByMac($heartbeat['network']['mac']);
+		$this->Netspresso->loadByName($heartbeat['box']['name'], true);
 
 		//For debuging
 		//$this->log("NetspressoController::heartbeat current state " . $heartbeat['box']['state']);

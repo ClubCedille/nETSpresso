@@ -373,19 +373,19 @@ class Netspresso extends AppModel {
 		$elapsed = strtotime("now") - strtotime($this->getEventTime());
 		$this->log("NetspressoModel::evaluateEventState elapsed time: " . round($elapsed / 60) . " minutes" );
 		
-		// Adjust event 'Ready' state to 'Cooling-Down' after 10 minutes ~ 600 secondes
+		// Adjust event 'Ready' state to 'Cooling-Down' after 2 minutes ~ 120 secondes
 		//
 		if ($this->getEventState() === 'Ready' and 
-		(strtotime("now") - strtotime($this->getEventTime()) > 600))
+		(strtotime("now") - strtotime($this->getEventTime()) > 120))
 		{
 			$this->setEventState('Cooling-Down');
 			$this->setEventTime(date("Y-m-d H:i:s"));
 		}
 		
-		// Adjust event 'Cooling-Down' state to 'Stand-By' after 20 minutes ~ 1200 secondes
+		// Adjust event 'Cooling-Down' state to 'Stand-By' after 3 minutes ~ 180 secondes
 		//		
 		if ($this->getEventState() === 'Cooling-Down' and 
-		(strtotime("now") - strtotime($this->getEventTime()) > 1200))
+		(strtotime("now") - strtotime($this->getEventTime()) > 180))
 		{
 			$this->setEventState('Stand-By');
 			$this->setEventTime(date("Y-m-d H:i:s"));
