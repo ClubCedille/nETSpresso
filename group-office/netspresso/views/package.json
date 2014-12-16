@@ -1,0 +1,19 @@
+{
+  "name": "group-office-netspresso",
+  "version": "0.0.0",
+  "description": "nETSpresso Module for Group Office",
+  "main": "main.js",
+  "scripts": {
+    "build": "./node_modules/.bin/browserify main.js -o build/build.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "watchify": "~2.1.1",
+    "browserify": "~6.2.0"
+  },
+  "dependencies": {
+    "lodash": "~2.4.1"
+  }
+}
