@@ -55,17 +55,18 @@ int relays_state[] = {0,0};
 
 #define STANDBY 0
 #define WARMING 1
-#define READY 2
+#define READY   2
 #define COOLING 3
-#define LOCKED 4
+#define LOCKED  4
 
 int state=STANDBY;
 
 #define DO_NOTHING 0
-#define WARM_UP 1
-#define COOL_DOWN 2
-#define LOCK_DOWN 3
-#define OVERRIDE 4
+#define WARM_UP    1
+#define COOL_DOWN  2
+#define LOCK_DOWN  3
+#define OVERRIDE   4
+#define NET_ERROR  5
 
 int action=DO_NOTHING;
 
@@ -225,7 +226,7 @@ float ac_manual()
 //-------------------------//
 // ROUTINE D'AFFICHAGE LCD //
 //-------------------------//
-void update_lcd_display()
+void update_lcd_display(int state)
 {
   // Couleur
   lcd.write(0xFE);
@@ -247,7 +248,7 @@ void update_lcd_display()
   lcd.write(1);
   lcd.write(2);
   
-  switch(get_state()){
+  switch(state){
   case STANDBY:
     lcd.print(" STAND BY");
     //blue
@@ -279,6 +280,12 @@ void update_lcd_display()
     lcd.print(" LOCKED");
     // red
     break;
+  
+  case NET_ERROR:
+    lcd.print(" NETWORK ERROR");
+    // red
+    break;
+  
   default:
     break;
   }
@@ -325,7 +332,7 @@ void relay_deactivate(int relay)
 void set_state(int new_state)
 {
    state = new_state;
-   update_lcd_display();
+   update_lcd_display(state);
 }
 
 //-----------//
@@ -339,34 +346,34 @@ int get_state()
 //-----------------//
 // GET STATE LABEL //
 //-----------------//
-String get_state_label()
-{
-  switch(get_state()){
-      case STANDBY:
-      return "Stand-By";
-      break;
-    
-    case WARMING:
-      return "Warming-Up";
-      break;
-    
-    case READY:
-      return "Ready";
-      break;
-    
-    case COOLING:
-      return "Cooling-Down";
-      break;
-    
-    case LOCKED:
-      return "Locked";
-      break;
-    
-    default:
-      return "Stand-By";
-      break;
-  }
-}
+// String get_state_label()
+// {
+//   switch(get_state()){
+//       case STANDBY:
+//       return "Stand-By";
+//       break;
+//     
+//     case WARMING:
+//       return "Warming-Up";
+//       break;
+//     
+//     case READY:
+//       return "Ready";
+//       break;
+//     
+//     case COOLING:
+//       return "Cooling-Down";
+//       break;
+//     
+//     case LOCKED:
+//       return "Locked";
+//       break;
+//     
+//     default:
+//       return "Stand-By";
+//       break;
+//   }
+// }
 
 //-------------------//
 // CHECK MANUAL MODE //
@@ -410,9 +417,11 @@ int send_event()
   {
     // Si la connection au serveurs est impossible:
     Serial.println(F("--> Déconnecté du serveur..."));
+    int trying = 0;
     do {
       Serial.println(F("--> Tentative de reconnection..."));
       delay(1000);
+      if(trying++ > 5) return NET_ERROR;
     } while (!client.connect(server,80));
     Serial.println(F("--> Reconnecté!"));
   } 
@@ -427,8 +436,8 @@ int send_event()
   Irms2 = ac_manual();
   
   // Current state
-  char state_label[13] = { '\0' };
-  get_state_label().toCharArray(state_label, 13);
+  // char state_label[13] = { '\0' };
+  // get_state_label().toCharArray(state_label, 13);
   
   Serial.println(state_label);
   // Affichage sur LCD
@@ -641,6 +650,13 @@ void override()
  Serial.println("--> STANDBY");
 }
 
+
+void net_error()
+{
+	
+	Serial.println("--> NET_ERROR");
+}
+
 //-----------------//
 // HOLD STATE (ok) //
 //----------------//
@@ -650,7 +666,6 @@ void hold_state()
     case STANDBY:
       if ((temperature() > 100) && (manual_cycles() > 90)) {
         lock_down();
-        
       }
       break;
     
@@ -661,9 +676,9 @@ void hold_state()
       break;
     
     case READY:
-      if (temperature() > 120) {
-        cool_down();
-      }
+      //if (temperature() > 120) {
+      //  cool_down();
+      //}
       break;
     
     case COOLING:
@@ -699,7 +714,7 @@ void loop()
     Serial.println(F("Memory loop begin (memory disp)" ));
     Serial.println(freeRam() );
 
-    update_lcd_display();
+    update_lcd_display(get_state());
     
     Serial.println(F("Memory loop end" ));
     Serial.println(freeRam() );
@@ -719,6 +734,9 @@ void loop()
         break;
       case OVERRIDE:
         override();
+        break;
+      case NET_ERROR:
+        net_error();
         break;
       default:
         hold_state();
