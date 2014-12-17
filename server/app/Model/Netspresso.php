@@ -191,7 +191,7 @@ class Netspresso extends AppModel {
 	public function validateState($state)
 	{
 
-		$states = array ('Stand-By', 'Locked', 'Warming-Up', 'Ready', 'Cooling-Down');
+		$states = array ('Stand-By', 'Locked', 'Warming-Up', 'Ready', 'Cooling-Down', 'Network-Error');
 
 		return in_array($state , $states);
 	}
@@ -298,8 +298,12 @@ class Netspresso extends AppModel {
 
 		// For debug
 		//$this->log("NetspressoModel::getNextAction actions: " . var_export($actions[$this->getEventState()], true));
-
-		$action = $actions[$this->getEventState()][$state];
+		// Override in case of network error oterwise evaluate the nex action
+		if ($state === 'Network-Error'){
+			$action = 'Override';
+		} else {
+			$action = $actions[$this->getEventState()][$state];
+		}
 		$code = $codes[$action];
 
 		// For debug
