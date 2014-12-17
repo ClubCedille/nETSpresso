@@ -439,7 +439,7 @@ int send_event()
   // char state_label[13] = { '\0' };
   // get_state_label().toCharArray(state_label, 13);
   
-  Serial.println(state_label);
+  Serial.println(get_state());
   // Affichage sur LCD
   //aff();
 /*
