@@ -1,37 +1,40 @@
-// Copyright Benoit Blanchon 2014
-// MIT License
-//
-// Arduino JSON library
-// https://github.com/bblanchon/ArduinoJson
+/*
+* Arduino JSON library - Parser Example
+* Benoit Blanchon 2014 - MIT License
+*/
 
-#include <ArduinoJson.h>
+#include <JsonParser.h>
 
-void setup() {
-  Serial.begin(9600);
+using namespace ArduinoJson::Parser;
 
-  StaticJsonBuffer<200> jsonBuffer;
+void setup()
+{
+    Serial.begin(9600);
 
-  char json[] =
-      "{\"sensor\":\"gps\",\"time\":1351824120,\"data\":[48.756080,2.302038]}";
+    char json [] = "{\"sensor\":\"gps\",\"time\":1351824120,\"data\":[48.756080,2.302038]}";
 
-  JsonObject& root = jsonBuffer.parseObject(json);
+    JsonParser<16> parser;
 
-  if (!root.success()) {
-    Serial.println("parseObject() failed");
-    return;
-  }
+    JsonObject root = parser.parse(json);
 
-  const char* sensor = root["sensor"];
-  long time = root["time"];
-  double latitude = root["data"][0];
-  double longitude = root["data"][1];
+    if (!root.success())
+    {
+        Serial.println("JsonParser.parse() failed");
+        return;
+    }
 
-  Serial.println(sensor);
-  Serial.println(time);
-  Serial.println(latitude, 6);
-  Serial.println(longitude, 6);
+    char*  sensor    = root["sensor"];
+    long   time      = root["time"];
+    double latitude  = root["data"][0];
+    double longitude = root["data"][1];
+
+    Serial.println(sensor);
+    Serial.println(time);
+    Serial.println(latitude, 6);
+    Serial.println(longitude, 6);
 }
 
-void loop() {
-  // not used in this example
+void loop()
+{
+
 }

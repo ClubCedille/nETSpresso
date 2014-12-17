@@ -1,8 +1,6 @@
 Arduino JSON library
 ====================
 
-[![Build Status](https://travis-ci.org/bblanchon/ArduinoJson.svg?branch=master)](https://travis-ci.org/bblanchon/ArduinoJson) [![Coverage Status](https://img.shields.io/coveralls/bblanchon/ArduinoJson.svg)](https://coveralls.io/r/bblanchon/ArduinoJson?branch=master)
-
 *An elegant and efficient JSON library for embedded systems.*
 
 It's design to have the most intuitive API, the smallest footprint and works without any allocation on the heap (no malloc).
@@ -12,50 +10,31 @@ It has been written with Arduino in mind, but it isn't linked to Arduino librari
 Features
 --------
 
-* JSON decoding
-* JSON encoding (with optional indentation)
+* JSON decoding: [see documentation here](/JsonParser/)
+* JSON encoding: [see documentation here](/JsonGenerator/)
 * Elegant API, very easy to use 
 * Fixed memory allocation (no malloc)
 * Small footprint
 * MIT License
 
-Quick start
------------
+Feature comparison
+------------------
 
-#### Decoding / Parsing
-   
-    char json[] = "{\"sensor\":\"gps\",\"time\":1351824120,\"data\":[48.756080,2.302038]}";
+| Library      | Memory allocation | Nested objects | Parser size | Encoder size  |
+| ------------ | ----------------- | -------------- | ----------- | ------------- |
+| Arduino JSON | static            | yes            | 2760 Bytes  | 862 bytes     |
+| json-arduino | dynamic           | no             | 3348 (+21%) | not supported |
+| aJson        | dynamic           | yes            | 5088 (+84%) | 4678 (+540%)  |
 
-    StaticJsonBuffer<200> jsonBuffer;
+"Parser size" was measured with a program parsing `{"sensor":"outdoor","value":25.6}`.
+For each library, I wrote a program that extracts a string and a float. I subtracted the size of a program doing the same without any JSON parsing involved. [Source files are here](https://gist.github.com/bblanchon/e8ba914a7109f3642c0f).
 
-    JsonObject& root = jsonBuffer.parseObject(json);
+"Encoder size" was measured with a program generating `{"sensor":"outdoor","value":25.6}`.
+[Source files are here](https://gist.github.com/bblanchon/60224e9dcfeab4ddc7e9).
 
-    const char* sensor = root["sensor"];
-    long time          = root["time"];
-    double latitude    = root["data"][0];
-    double longitude   = root["data"][1];
+In each case the target platform was an Arduino Duemilanove and Arduino IDE 1.0.5 was used. 
 
-#### Encoding / Generating
-   
-    StaticJsonBuffer<200> jsonBuffer;
-
-    JsonObject& root = jsonBuffer.createObject();
-    root["sensor"] = "gps";
-    root["time"] = 1351824120;
-
-    JsonArray& data = root.createNestedArray("data");
-    data.add(48.756080, 6);  // 6 is the number of decimals to print
-    data.add(2.302038, 6);   // if not specified, 2 digits are printed
-
-    root.printTo(Serial);
-    // This prints:
-    // {"sensor":"gps","time":1351824120,"data":[48.756080,2.302038]}
-
-
-Documentation
--------------
-
-The documentation is available online in the [Arduino JSON wiki](https://github.com/bblanchon/ArduinoJson/wiki) 
+Links: [json-arduino](https://github.com/not404/json-arduino), [aJson](https://github.com/interactive-matter/aJson) 
 
 Testimonials
 ------------
@@ -76,6 +55,10 @@ From GitHub user `zacsketches`:
 > I've been watching you consistently develop this library over the past six months, and I used it today for a publish and subscribe architecture designed to help hobbyists move into more advanced robotics. Your library allowed me to implement remote subscription in order to facilitate multi-processor robots.
 > ArduinoJson saved me a week's worth of time!!
 
----
+Related blog posts
+-----
 
-Found this library useful? [Help me back with a donation!](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=donate%40benoitblanchon%2efr&lc=GB&item_name=Benoit%20Blanchon&item_number=Arduino%20JSON&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donate_LG%2egif%3aNonHosted) :smile:
+* [The project I originally wrote this library for](http://blog.benoitblanchon.fr/rfid-payment-terminal/)
+* [Motivation for this library](http://blog.benoitblanchon.fr/arduino-json-parser/)
+* [Release of version 2](http://blog.benoitblanchon.fr/arduino-json-v2-0/)
+* [Release of version 3](http://blog.benoitblanchon.fr/arduino-json-v3-0/)

@@ -1,5 +1,5 @@
 {
-  "name": "Json",
+  "name": "Arduino-Json",
   "keywords": "json, rest, http, web",
   "description": "An elegant and efficient JSON library for embedded systems",
   "repository":
@@ -7,11 +7,9 @@
     "type": "git",
     "url": "https://github.com/bblanchon/ArduinoJson.git"
   },
-  "authors":
+  "author":
   {
     "name": "Benoit Blanchon",
     "url": "http://blog.benoitblanchon.fr"
-  },
-  "frameworks": "arduino",
-  "platforms": "atmelavr"  
+  }  
 }
