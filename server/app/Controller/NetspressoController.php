@@ -59,7 +59,7 @@ class NetspressoController extends AppController {
 private function json_decompress($received){
     $build = array();
     //$received = json_decode($input);
-    $states = array("Stand-By", "Warming-Up", "Ready", "Cooling-Down", "Locked");
+    $states = array("Stand-By", "Warming-Up", "Ready", "Cooling-Down", "Locked", "Network-Error");
 
     // Build basic box info
     $build["box"] = array(
