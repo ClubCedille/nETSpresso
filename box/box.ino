@@ -1,7 +1,17 @@
-/* nETSpresso
 
-Programme de contrôle de la machine à expresso «nETSpresso»
+/*
+      ----------------------
+      « nETSpresso » Project
+      ----------------------
 
+    Automatic preheat control for CRITIAS' "Mokita café crème" espresso machine
+    Built to work using CEDILLE's custom GroupOffice plugin and server
+    Designed and built by CEDILLE
+
+    CRITIAS: Chaire de recherche industrielle en technologies intra-auriculaire Sonomax-ÉTS
+    CEDILLE: Club d'expérimentation Devops et d'intégration de logiciels libres et embarqués
+
+    École de Technologie Supérieure
 */
 
 #include <SPI.h>
@@ -10,10 +20,8 @@ Programme de contrôle de la machine à expresso «nETSpresso»
 #include "EmonLib.h"
 #include <SoftwareSerial.h>
 #include <JsonGenerator.h>
-//#include <MemoryFree.h>
 using namespace ArduinoJson::Generator;
 #include <JsonParser.h>
-//using namespace ArduinoJson::Parser;
 
 // Aruidno output pins
 #define LED_SWITCH 5
@@ -24,43 +32,46 @@ using namespace ArduinoJson::Generator;
 #define REL_WARM_STATE 0
 #define REL_LOCK_STATE 1
 
-// Create a software serial port!
+// Software serial port
 SoftwareSerial lcd = SoftwareSerial(0,2);
 
-// Adresse IP serveur distant:
+// IP Address of nETSpresso server
 char server[] = "192.168.1.57";
 
-// Adresse MAC Arduino Ethernet:
+// Arduino Ethernet's MAC address
 byte mac[] = { 0x90, 0xA2, 0xDA, 0x0E, 0xDC, 0x1E };
   
-// Adresse IP par défaut de arduino si DHCP indisponible:
+// Default IP if no DHCP
 IPAddress ip(192,168,1,20);
 
-// Initialisation de la librairie du client Ethernet:
+// Initialisation of Ethernet Client Library
 EthernetClient client;
 
-// Capteur de courant
+// Current sensors
 float Irms1;
 float Irms2;
 float calib = 42.55;
 EnergyMonitor emon1;
 EnergyMonitor emon2;
 
+// miscellaneous variables
 int compteur = 0;
 int flag = 0;
 int temp = 0;
 int manual_mode = 0;
-
 int relays_state[] = {0,0};
 
+// nETSpresso "states"
 #define STANDBY 0
 #define WARMING 1
 #define READY   2
 #define COOLING 3
 #define LOCKED  4
 
+// Initial state
 int state=STANDBY;
 
+// nETSpresso "actions"
 #define DO_NOTHING 0
 #define WARM_UP    1
 #define COOL_DOWN  2
@@ -68,179 +79,175 @@ int state=STANDBY;
 #define OVERRIDE   4
 #define NET_ERROR  5
 
+// Initial action
 int action=DO_NOTHING;
 
-//--------------------------//
-// ROUTINE D'INITIALISATION //
-//--------------------------//
+//--------------//
+// System setup //
+//--------------//
 
-void setup()
-{
-  delay(3000);
-  // Initialisation communication sérielle et attente de l'ouverture du port:
-  Serial.begin(9600);
-  Serial.println(F("Memory Début" ));
+void setup() {
   
-  Serial.println(freeRam() );
-  // Initialise switch LED
+  delay(3000);
+  
+  // Start serial communication
+  Serial.begin(9600);
+
+  // Initialize switch LED
   pinMode(LED_SWITCH, OUTPUT);
   
-  // Initialise les sorties pour les relais
+  // Initialize relay outputs
   pinMode(REL_LOCK, OUTPUT);
   pinMode(REL_WARM, OUTPUT);  
   
+  // Initialize LCD
   lcd.begin(9600);
   
-  // set the size of the display if it isn't 16x2 (you only have to do this once)
+  // Set Size of LCD display
   lcd.write(0xFE);
   lcd.write(0xD1);
   lcd.write(16); // 16 columns
   lcd.write(2); // 2 rows
-  delay(10);
-  // we suggest putting delays after each command to make sure the data
-  // is sent and the LCD is updated.
+  delay(10); // This delay must exist after every commands
    
-  // set the contrast
+  // Set the contrast
   lcd.write(0xFE);
   lcd.write(0x50);
   lcd.write(220);
   delay(10);
   
-  // set the brightness
+  // Set the brightness
   lcd.write(0xFE);
   lcd.write(0x99);
   lcd.write(255);
   delay(10);
   
-  // turn off cursors
+  // Turn off cursors
   lcd.write(0xFE);
   lcd.write(0x4B);
   lcd.write(0xFE);
   lcd.write(0x54);
   delay(10);
   
-  // clear screen
+  // Clear screen
   lcd.write(0xFE);
   lcd.write(0x58);
   delay(10);
   
-  // go 'home'
+  // Cursor go home
   lcd.write(0xFE);
   lcd.write(0x48);
   delay(10);
 
-  delay(1000);
-
-  // Message de bienvenue sériel:
-  Serial.println(F(" -----------------------"));
-  Serial.println(F(" Bienvenue à nETSpresso!"));
-  Serial.println(F(" -----------------------"));
+  // Display welcome message (serial)
+  Serial.println(F(" ------------"));
+  Serial.println(F("  nETSpresso"));
+  Serial.println(F(" ------------"));
   Serial.println();
-  Serial.println(F("--> Initialisation, veuillez patienter..."));
+  Serial.println(F("--> Initializing..."));
   
-  // Message de bienvenue sur LCD:
+  // Display welcome message (LCD)
   lcd.print("   nETSpresso");
   
-  // Configuration du capteur de courant:  
+  // Configuration of current sensors  
   emon1.current(5, calib); // (Pin number, calibration value)
   emon2.current(4, calib); // (Pin number, calibration value)
   
-  // Configuration de la connection ethernet:  
-  if (Ethernet.begin(mac) == 0) // (Mac address)
-  {
-    Serial.println(F("--> DHCP indisponible"));
-    Serial.println(F("--> Tentative de connection avec adresse IP par défaut:"));
-
+  // Configuration of ethernet connection  
+  if (Ethernet.begin(mac) == 0) {
+    Serial.println(F("--> No DHCP"));
+    Serial.println(F("--> Connecting using default IP..."));
     Ethernet.begin(mac, ip); // (Mac address, default arduino ip number)
   }
-
-  /*
-  // Délais pour initialisation du Ethernet Shield:
-  Serial.println(F("--> Connection..."));
-  delay(2000);
   
-  // Si la connection est réussie, affichage sur terminal sériel:
-  if (client.connect(server, 80)) // (Serveur distant, port)
-  {
-    Serial.println(F("--> Connecté"));
-  }
-  
-  // Si la connection a échouée
-  else
-  {
-    Serial.println(F("--> Connection impossible!"));
-  }
-  */
-  
-  for(int i=0; i<4; i++){
+  // Blink LED after setup
+  for(int i=0; i<4; i++) {
     digitalWrite(LED_SWITCH, HIGH);
     delay(200);
     digitalWrite(LED_SWITCH, LOW);
     delay(400);
   }
   
+  // Set initial state
   set_state(STANDBY);
-  Serial.println(F("Memory Fin" ));
-  Serial.println(freeRam() );
 }
 
 //--------------------//
 // TEMPERATURE SENSOR //
 //--------------------//
-int temperature()
-{
-  // Initialisation du thermocouple:
-  AD595 thermocouple;
 
-  Serial.println(F("TEMPERATURE (°C):"));
+int temperature() {
+  
+  // Initialize thermocouple
+  AD595 thermocouple;
+  
+  // Get temperature
   temp = thermocouple.measure(TEMPC);
+  
+  // Print Temperature (Serial)
+  Serial.println(F("TEMPERATURE (°C):"));
   Serial.println(temp);
   Serial.println("");
+  
   return temp;
 }
 
 //------------------------------//
 // MAIN POWER AC CURRENT SENSOR //
 //------------------------------//
-float ac_power()
-{
-  Serial.println(F("AC POWER CURRENT SENSOR (A):"));
+
+float ac_power() {
+
+  // Get current for main power
   Irms1 = emon1.calcIrms(1480);
+  
+  // Print current (Serial output)
+  Serial.println(F("AC POWER CURRENT SENSOR (A):"));
   Serial.println(Irms1);
   Serial.println("");
+  
   return Irms1;
 }
   
 //-------------------------------//
 // MANUAL MODE AC CURRENT SENSOR //
 //-------------------------------//
-float ac_manual()
-{
-  Serial.println(F("AC MANUAL MODE CURRENT SENSOR (A):"));
+
+float ac_manual() {
+
+  // Get current for manual mode
   Irms2 = emon2.calcIrms(1480);
+
+  // Print current (Serial output)
+  Serial.println(F("MANUAL CURRENT SENSOR (A): "));
   Serial.println(Irms2);
   Serial.println("");
+  
   return Irms2;
 }
 
-//-------------------------//
-// ROUTINE D'AFFICHAGE LCD //
-//-------------------------//
-void update_lcd_display(int state)
-{
-  // Couleur
+//---------------------//
+// LCD DISPLAY ROUTINE //
+//---------------------//
+
+void update_lcd_display(int state) {
+  
+  // Color
   lcd.write(0xFE);
   lcd.write(0xD0);
   lcd.write(0x1);
   lcd.write(0x255);
   lcd.write(0x1);
-  // Efface l'écran
+  
+  // Clear screen
   lcd.write(0xFE);
   lcd.write(0x58);
-  // Curseur au début
+  
+  // Cursor go home
   lcd.write(0xFE);
   lcd.write(0x48);
-  // Affiche température
+  
+  // Display temperature
   lcd.print("Temperature: ");
   lcd.print(temp);
   lcd.write(0xFE);
@@ -248,78 +255,93 @@ void update_lcd_display(int state)
   lcd.write(1);
   lcd.write(2);
   
-  switch(state){
-  case STANDBY:
-    lcd.print(" STAND BY");
-    //blue
-    break;
+  // Display state
+  switch(state) {
+    
+    case STANDBY:
+      lcd.print(" STAND BY");
+      //blue
+      break;
   
-  case WARMING:
-    lcd.print(" WARMING UP");
-    // orange
-    break;
+    case WARMING:
+      lcd.print(" WARMING UP");
+      // orange
+      break;
   
-  case READY:
-    lcd.print(" READY");
-    // green
-    break;
+    case READY:
+      lcd.print(" READY");
+      // green
+      break;
   
-  case COOLING:
-    lcd.print(" COOLING");
-    if (temperature() > 100) {
-    // green
-    break;
-    }
-    if (temperature() > 30) {
-    // orange
-    break;
-    }
-    break;
+    case COOLING:
+      lcd.print(" COOLING");
+      if (temperature() > 100) {
+      // green
+      break;
+      }
+      if (temperature() > 30) {
+      // orange
+      break;
+      }
+      break;
   
-  case LOCKED:
-    lcd.print(" LOCKED");
-    // red
-    break;
+    case LOCKED:
+      lcd.print(" LOCKED");
+      // red
+      break;
   
-  case NET_ERROR:
-    lcd.print(" NETWORK ERROR");
-    // red
-    break;
+    case NET_ERROR:
+      lcd.print(" NETWORK ERROR");
+      // red
+      break;
   
-  default:
-    break;
+    default:
+      break;
   }
-
-  
 }
 
 //----------------//
 // RELAY ACTIVATE //
 //----------------//
-void relay_activate(int relay)
-{
+
+void relay_activate(int relay) {
+
+  // Activate relay
   digitalWrite(relay,HIGH);
+  
+  // Set relay state flag
   switch (relay) {
+    
+    // Flag for warming relay
     case REL_WARM:
       relays_state[REL_WARM_STATE] = 1;
       break;
+    
+    // Flag for locking relay
     case REL_LOCK:
       relays_state[REL_LOCK_STATE] = 1;
       break;
   }
-  
 }
 
 //------------------//
 // RELAY DEACTIVATE //
 //------------------//
-void relay_deactivate(int relay)
-{
+
+void relay_deactivate(int relay) {
+  
+  // Deactivate relay
   digitalWrite(relay,LOW);
-    switch (relay) {
+  
+  // Set relay state flag
+  switch (relay) {
+
+    // Flag for warming relay
     case REL_WARM:
       relays_state[REL_WARM_STATE] = 0;
       break;
+
+    // Flag for locking relay
     case REL_LOCK:
       relays_state[REL_LOCK_STATE] = 0;
       break;
@@ -329,57 +351,33 @@ void relay_deactivate(int relay)
 //-----------//
 // SET STATE //
 //-----------//
-void set_state(int new_state)
-{
-   state = new_state;
-   update_lcd_display(state);
+
+void set_state(int new_state) {
+  
+  // Set a new state
+  state = new_state;
+  
+  // Display new state (LCD)
+  update_lcd_display(state);
 }
 
 //-----------//
 // GET STATE //
 //-----------//
-int get_state()
-{
+
+int get_state() {
+  
+  // Return state
   return state;
 }
-
-//-----------------//
-// GET STATE LABEL //
-//-----------------//
-// String get_state_label()
-// {
-//   switch(get_state()){
-//       case STANDBY:
-//       return "Stand-By";
-//       break;
-//     
-//     case WARMING:
-//       return "Warming-Up";
-//       break;
-//     
-//     case READY:
-//       return "Ready";
-//       break;
-//     
-//     case COOLING:
-//       return "Cooling-Down";
-//       break;
-//     
-//     case LOCKED:
-//       return "Locked";
-//       break;
-//     
-//     default:
-//       return "Stand-By";
-//       break;
-//   }
-// }
 
 //-------------------//
 // CHECK MANUAL MODE //
 //-------------------//
-void check_manual_mode()
-{
+
+void check_manual_mode() {
+  
+  // Check if machine is in manual mode
   if (ac_manual() > 1) {
     manual_mode++;
   }
@@ -391,94 +389,50 @@ void check_manual_mode()
 //---------------//
 // MANUAL CYCLES //
 //---------------//
-int manual_cycles()
-{
+
+int manual_cycles() {
+  
+  // Returns manual mode value
   return manual_mode;
 }
 
-//---------------------//
-// ROUTINE D'ÉVÉNEMENT //
-//---------------------//
+//-------//
+// EVENT //
+//-------//
 
-int send_event()
-{
-  Serial.println(F("Memory event debut" ));
-  Serial.println(freeRam() );
-  //int temp;
-  Serial.println(F(" *** Événement ***"));
+int send_event() {
+  
+  // Display start of event (Serial)
+  Serial.println();
+  Serial.println(F(" *** EVENT ***"));
   Serial.println();
   delay(500);
   
-  client.stop();
-  if (client.connect(server, 80)) {
-    Serial.println(F("--> Connecté!"));
-  }
-  else
-  {
-    // Si la connection au serveurs est impossible:
-    Serial.println(F("--> Déconnecté du serveur..."));
-    int trying = 0;
-    do {
-      Serial.println(F("--> Tentative de reconnection..."));
-      delay(1000);
-      if(trying++ > 5) return NET_ERROR;
-    } while (!client.connect(server,80));
-    Serial.println(F("--> Reconnecté!"));
-  } 
-  Serial.println(F("Memory connect client fin" ));
-  Serial.println(freeRam() ); 
-  
-  // Capture de la température
+  // Get temperature value
   temp = temperature();
   
-  // Capture du courant
+  // Get current values
   Irms1 = ac_power();
   Irms2 = ac_manual();
-  
-  // Current state
-  // char state_label[13] = { '\0' };
-  // get_state_label().toCharArray(state_label, 13);
-  
+
+  // Print state (Serial)
   Serial.println(get_state());
-  // Affichage sur LCD
-  //aff();
-/*
-  // Controle des relais
-  relay_activate(REL_LOCK);
-  delay(1000);
-  relay_deactivate(REL_LOCK);
-  delay(1000);
-  relay_activate(REL_WARM);
-  delay(1000);
-  relay_deactivate(REL_WARM);
-  delay(1000);
-*/  
   
-  // Informations à transférer au serveur:
-  //PostData="{\"temperature\":temp,\"unite1\":\"degre_celcius\",\"courant\":Irms,\"unite2\":\"Amperes\"}";
-  
-  //JsonObject<4> power;
-  //power["sensor"] = "netspresso01.ac_power";
-  //power["value"] = "110";
-  //power["units"] = "Volts";
-  //power["adquired"] = "2014-08-09T05:46:06-0400";
-  
-  //JsonArray<1> metrics;
-  //metrics.add(power);
-  Serial.println(F("Memory json debut" ));
-  Serial.println(freeRam() );
-  
+  // Json Object
   JsonObject<4> sensors;
   
+  // Json Arrays
   JsonArray<1> leds;
   JsonArray<2> relays;
   JsonArray<2> current;
   JsonArray<1> temperatures;
   
+  // Defining Json arrays
   leds.add(0);
   relays.add(relays_state[REL_WARM_STATE]);
   relays.add(relays_state[REL_LOCK_STATE]);
   
+  // Defining Json Objects
   JsonObject<2> current_power;
   current_power["u"] = "A";
   current_power["v"] = Irms1;
@@ -509,74 +463,43 @@ int send_event()
   data["box"] = box;
   data["sensors"] = sensors;
 
-  
+  // Initialize buffer
   char databuffer[299] = { '\0' };
-  //char *databuffer = new char[200];
+
+  // Fill the buffer
   data.printTo(databuffer, sizeof(databuffer));
-   
-  //free(&power);
-  //free(&metrics);
-  //free(&box);
-  //delete(&data);
-  
-  //String PostData;
-  //String PostData="{\"path\":\"netspresso.relay.01\",\"value\":3,\"units\":\"watts\",\"epoch\":\"2014-08-09T05:46:06-0400\"}";
-  //String PostData ="{\"box\":{\"name\":\"netspresso01\",\"state\":\"Ready\",\"temperature\":\"30\"}}";
-  Serial.print(F("Requete au serveur:"));
+
+  // Display Json from buffer (Serial)
+  Serial.print(F("Server request:"));
   Serial.println(databuffer);
   Serial.println(strlen(databuffer));
   
-  // Requête HTTP:
-  Serial.println(F("Memory http" ));
-  Serial.println(freeRam() );
+  // HTTP request:
   client.println(F("POST /netspresso/heartbeat.json HTTP/1.1"));
   client.println(F("Host: 192.168.1.57")); 
   client.println(F("Content-Type: application/json;"));
   client.print(F("Content-Length: "));
-
-
   client.println(strlen(databuffer));
-  //client.println("Connection: close"); 
   client.println();   
-  //client.println(PostData);
-  //client.println(strdata);
   client.println(databuffer);
-  //data.printTo(client);
-  Serial.println(F("Memory http fin" ));
-  Serial.println(freeRam() );
 
+  // Delay for server feedback
   Serial.println("");
-  Serial.println(F("Délais d'attente..."));
+  Serial.println(F("Delay..."));
+  Serial.println("");
+  delay(5000);
 
-  delay(5000);  
-
-  while(!client.available()) {
-/*  Serial.println(F("--> Déconnecté du client, tentative de reconnection..."));
-    //client.stop();
-    delay(500);
-    if (client.connect(server, 80))
-    {
-      Serial.println(F("--> Connecté!"));
-    }
-    else
-    {
-      // Si la connection au serveurs est impossible:
-      Serial.println(F("--> Connection impossible..."));
-      //return;
-    } 
-*/}
+  while(!client.available())
   
-  Serial.print(F("Réponse du serveur:"));
+  Serial.print(F("Answer from server:"));
   
   //char json[99] = { '\0' };
   memset(databuffer, 0, sizeof(databuffer));
   int i = 0;
   
-  while(client.available())
-  {
+  while(client.available()) {
     char c = client.read();    
-    if((c == '{') or (i > 0)){
-      //json[i] = c;
+    if((c == '{') or (i > 0)) {
       databuffer[i] = c;
       i = i + 1;
     }
@@ -585,15 +508,13 @@ int send_event()
 
   //Serial.println(json);
   Serial.println(databuffer);
-  Serial.println(F("Memory" ));
-  Serial.println(freeRam() );
+//Serial.println(F("Memory" ));
+//Serial.println(freeRam() );
   // Parse the Json response
   ArduinoJson::Parser::JsonParser<16> parser;
-  //char json[99] = "{\"response\":{\"code\":\"002\",\"message\":\"Cold-Down\"}}";
  
   ArduinoJson::Parser::JsonObject root = parser.parse(databuffer);
-  if (!root.success())
-  {
+  if (!root.success()) {
     Serial.println("JsonParser.parse() failed");
     return DO_NOTHING;
   }
@@ -609,20 +530,22 @@ int send_event()
 //---------//
 // WARM UP //
 //---------//
-void warm_up()
-{
- if (temperature() < 100) {
+
+void warm_up() {
+  
+  if (temperature() < 100) {
     relay_activate(REL_WARM);
     set_state(WARMING);
     Serial.println("--> WARMING UP");
- }
+  }
 }
 
 //-----------//
 // COOL DOWN //
 //-----------//
-void cool_down()
-{
+
+void cool_down() {
+  
  relay_deactivate(REL_WARM);
  set_state(COOLING);
  Serial.println("--> COOLING DOWN");
@@ -631,38 +554,47 @@ void cool_down()
 //-----------//
 // LOCK DOWN //
 //-----------//
-void lock_down()
-{
- relay_activate(REL_LOCK);
- relay_deactivate(REL_WARM);
- set_state(LOCKED);
- Serial.println("--> MACHINE LOCKED");
+
+void lock_down() {
+  
+  relay_activate(REL_LOCK);
+  relay_deactivate(REL_WARM);
+  set_state(LOCKED);
+  Serial.println("--> MACHINE LOCKED");
 }
 
 //----------//
 // OVERRIDE //
 //----------//
-void override()
-{
- relay_deactivate(REL_LOCK);
- relay_deactivate(REL_WARM);
- set_state(STANDBY);
- Serial.println("--> STANDBY");
+
+void override() {
+  
+  relay_deactivate(REL_LOCK);
+  relay_deactivate(REL_WARM);
+  set_state(STANDBY);
+  Serial.println("--> STANDBY");
 }
 
+//-----------//
+// NET_ERROR //
+//-----------//
 
-void net_error()
-{
-	
-	Serial.println("--> NET_ERROR");
+void net_error() {
+  
+  relay_deactivate(REL_WARM);
+  set_state(NET_ERROR);
+  //update_lcd_display(NET_ERROR);
+  Serial.println("--> NET_ERROR");
 }
 
-//-----------------//
-// HOLD STATE (ok) //
-//----------------//
-void hold_state()
-{
+//------------//
+// HOLD STATE //
+//------------//
+
+void hold_state() {
+  
   switch(get_state()) {
+    
     case STANDBY:
       if ((temperature() > 100) && (manual_cycles() > 90)) {
         lock_down();
@@ -676,9 +608,6 @@ void hold_state()
       break;
     
     case READY:
-      //if (temperature() > 120) {
-      //  cool_down();
-      //}
       break;
     
     case COOLING:
@@ -693,7 +622,6 @@ void hold_state()
     default:
       break;
   }
-
 }
 
 int freeRam() {
@@ -702,50 +630,81 @@ int freeRam() {
   return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
 }
 
+//--------------//
+// CONNECTIVITÉ //
+//--------------//
+
+bool connect() {
+  
+    client.stop();
+    
+    if (client.connect(server, 80)) {
+      Serial.println(F("--> Connecté!"));
+      return true;
+    } 
+    
+    else {
+      Serial.println(F("--> Déconnecté..."));
+      int trying = 0;
+      do {
+        Serial.println(F("--> Tentative de reconnection..."));
+        delay(1000);
+        trying++;
+        if (trying >= 5) {
+          return false;
+        }
+      } while (!client.connect(server,80));
+    }
+    return true;
+}
+
 //--------------------//
 // ROUTINE PRINCIPALE //
 //--------------------//
 
-void loop()
-{
-  do
-  {
-    delay(4000);
-    Serial.println(F("Memory loop begin (memory disp)" ));
-    Serial.println(freeRam() );
+void loop() {
+  
+  do {
 
-    update_lcd_display(get_state());
+    if (!connect()) {
+      action = NET_ERROR;
+    }
     
-    Serial.println(F("Memory loop end" ));
-    Serial.println(freeRam() );
-
+    else {
+      action = send_event();
+    }
     
-    action = send_event();
-    
-    switch(action){
+    Serial.println(F(""));
+    Serial.println(F(" *** Switch after send_event() ***"));
+    switch(action) {
+      
       case WARM_UP:
         warm_up();
         break;
+        
       case COOL_DOWN:
         cool_down();
         break;
+        
       case LOCK_DOWN:
         lock_down();
         break;
+        
       case OVERRIDE:
         override();
         break;
+        
       case NET_ERROR:
         net_error();
         break;
+        
       default:
         hold_state();
     }
     
+    update_lcd_display(get_state());
+    
     check_manual_mode();
     
-
   } while(true);  
 }
-
-
