@@ -129,6 +129,14 @@ void setup() {
   lcd.write(0x54);
   delay(10);
   
+  // Set blue color
+  lcd.write(0xFE);
+  lcd.write(0xD0);
+  lcd.write(0x1);
+  lcd.write(0x1);
+  lcd.write(0x255);
+  delay(10);
+  
   // Clear screen
   lcd.write(0xFE);
   lcd.write(0x58);
@@ -202,6 +210,7 @@ float ac_power() {
   Irms1 = emon1.calcIrms(1480);
   
   // Print current (Serial output)
+  Serial.println();
   Serial.println(F("AC POWER CURRENT SENSOR (A):"));
   Serial.println(Irms1);
   Serial.println("");
@@ -219,6 +228,7 @@ float ac_manual() {
   Irms2 = emon2.calcIrms(1480);
 
   // Print current (Serial output)
+  Serial.println();
   Serial.println(F("MANUAL CURRENT SENSOR (A): "));
   Serial.println(Irms2);
   Serial.println("");
@@ -232,12 +242,25 @@ float ac_manual() {
 
 void update_lcd_display(int state) {
   
-  // Color
-  lcd.write(0xFE);
-  lcd.write(0xD0);
-  lcd.write(0x1);
-  lcd.write(0x255);
-  lcd.write(0x1);
+  if (state == NET_ERROR) {
+    
+    // Red Color
+    lcd.write(0xFE);
+    lcd.write(0xD0);
+    lcd.write(0x255);
+    lcd.write(0x1);
+    lcd.write(0x1);
+  }
+  
+  else {
+    
+    // Green Color
+    lcd.write(0xFE);
+    lcd.write(0xD0);
+    lcd.write(0x1);
+    lcd.write(0x255);
+    lcd.write(0x1);
+  }
   
   // Clear screen
   lcd.write(0xFE);
@@ -260,39 +283,32 @@ void update_lcd_display(int state) {
     
     case STANDBY:
       lcd.print(" STAND BY");
-      //blue
       break;
   
     case WARMING:
       lcd.print(" WARMING UP");
-      // orange
       break;
   
     case READY:
       lcd.print(" READY");
-      // green
       break;
   
     case COOLING:
       lcd.print(" COOLING");
       if (temperature() > 100) {
-      // green
       break;
       }
       if (temperature() > 30) {
-      // orange
       break;
       }
       break;
   
     case LOCKED:
       lcd.print(" LOCKED");
-      // red
       break;
   
     case NET_ERROR:
-      lcd.print(" NETWORK ERROR");
-      // red
+      lcd.print("NETWORK ERROR...");
       break;
   
     default:
@@ -493,10 +509,10 @@ int send_event() {
   
   Serial.print(F("Answer from server:"));
   
-  //char json[99] = { '\0' };
   memset(databuffer, 0, sizeof(databuffer));
   int i = 0;
   
+  // Get response from client
   while(client.available()) {
     char c = client.read();    
     if((c == '{') or (i > 0)) {
@@ -505,12 +521,10 @@ int send_event() {
     }
     Serial.print(c);
   }
-
-  //Serial.println(json);
+  
+  // Print response (Serial)
   Serial.println(databuffer);
-//Serial.println(F("Memory" ));
-//Serial.println(freeRam() );
-  // Parse the Json response
+
   ArduinoJson::Parser::JsonParser<16> parser;
  
   ArduinoJson::Parser::JsonObject root = parser.parse(databuffer);
@@ -518,7 +532,7 @@ int send_event() {
     Serial.println("JsonParser.parse() failed");
     return DO_NOTHING;
   }
-  ArduinoJson::Parser::JsonObject response = root["response"];
+  ArduinoJson::Parser::JsonObject response = root["Response"];
   char* code = response["code"];
   
   Serial.print(F("Return code: "));
@@ -533,6 +547,7 @@ int send_event() {
 
 void warm_up() {
   
+  // Warm up the machine
   if (temperature() < 100) {
     relay_activate(REL_WARM);
     set_state(WARMING);
@@ -545,10 +560,11 @@ void warm_up() {
 //-----------//
 
 void cool_down() {
-  
- relay_deactivate(REL_WARM);
- set_state(COOLING);
- Serial.println("--> COOLING DOWN");
+
+  // Cool down the machine 
+  relay_deactivate(REL_WARM);
+  set_state(COOLING);
+  Serial.println("--> COOLING DOWN");
 }
 
 //-----------//
@@ -557,6 +573,7 @@ void cool_down() {
 
 void lock_down() {
   
+  // Lock down the machine
   relay_activate(REL_LOCK);
   relay_deactivate(REL_WARM);
   set_state(LOCKED);
@@ -569,6 +586,7 @@ void lock_down() {
 
 void override() {
   
+  // Override
   relay_deactivate(REL_LOCK);
   relay_deactivate(REL_WARM);
   set_state(STANDBY);
@@ -581,9 +599,9 @@ void override() {
 
 void net_error() {
   
+  // Disable warming if network error
   relay_deactivate(REL_WARM);
   set_state(NET_ERROR);
-  //update_lcd_display(NET_ERROR);
   Serial.println("--> NET_ERROR");
 }
 
@@ -624,38 +642,39 @@ void hold_state() {
   }
 }
 
-int freeRam() {
-  extern int __heap_start, *__brkval;
-  int v;
-  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
-}
-
 //--------------//
 // CONNECTIVITÉ //
 //--------------//
 
 bool connect() {
   
-    client.stop();
-    
-    if (client.connect(server, 80)) {
-      Serial.println(F("--> Connecté!"));
-      return true;
-    } 
-    
-    else {
-      Serial.println(F("--> Déconnecté..."));
-      int trying = 0;
-      do {
-        Serial.println(F("--> Tentative de reconnection..."));
-        delay(1000);
-        trying++;
-        if (trying >= 5) {
-          return false;
-        }
-      } while (!client.connect(server,80));
-    }
+  // Stop the client
+  client.stop();
+  
+  // Check if server is still connected
+  if (client.connect(server, 80)) {
+    Serial.println(F("--> Connected!"));
     return true;
+  } 
+  
+  // Server is not connected anymore
+  else {
+    Serial.println(F("--> Disconnected..."));
+    int trying = 0;
+    do {
+      
+      // Try to reconnect to the server
+      Serial.println(F("--> Trying to reconnect..."));
+      delay(1000);
+      trying++;
+      if (trying >= 5) {
+        return false;
+      }
+      
+    // Retry when the client is not connected
+    } while (!client.connect(server,80));
+  }
+  return true;
 }
 
 //--------------------//
@@ -664,18 +683,29 @@ bool connect() {
 
 void loop() {
   
+  // Initial run for current sensors for calibration
+  Irms1 = ac_power();
+  Irms2 = ac_manual();
+  
   do {
 
+    // Check if server is still connected
     if (!connect()) {
+      
+      // If the server is not connected anymore
       action = NET_ERROR;
     }
     
+    // The server is connected
     else {
+      
+      // Do the main event
       action = send_event();
     }
     
-    Serial.println(F(""));
-    Serial.println(F(" *** Switch after send_event() ***"));
+    Serial.println();
+    Serial.println(F(" *** Switch action ***"));
+    Serial.println();
     switch(action) {
       
       case WARM_UP:
@@ -702,9 +732,12 @@ void loop() {
         hold_state();
     }
     
+    // Update the information on LCD display
     update_lcd_display(get_state());
     
+    // Check if machine is in manual mode
     check_manual_mode();
     
+    // Infinite loop
   } while(true);  
 }
