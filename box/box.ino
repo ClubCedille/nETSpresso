@@ -113,7 +113,7 @@ void setup() {
   // Set the contrast
   lcd.write(0xFE);
   lcd.write(0x50);
-  lcd.write(220);
+  lcd.write(255);
   delay(10);
   
   // Set the brightness
@@ -132,8 +132,8 @@ void setup() {
   // Set blue color
   lcd.write(0xFE);
   lcd.write(0xD0);
-  lcd.write(0x1);
-  lcd.write(0x1);
+  lcd.write((uint8_t)0x00);
+  lcd.write((uint8_t)0x00);
   lcd.write(0x255);
   delay(10);
   
@@ -241,27 +241,7 @@ float ac_manual() {
 //---------------------//
 
 void update_lcd_display(int state) {
-  
-  if (state == NET_ERROR) {
-    
-    // Red Color
-    lcd.write(0xFE);
-    lcd.write(0xD0);
-    lcd.write(0x255);
-    lcd.write(0x1);
-    lcd.write(0x1);
-  }
-  
-  else {
-    
-    // Green Color
-    lcd.write(0xFE);
-    lcd.write(0xD0);
-    lcd.write(0x1);
-    lcd.write(0x255);
-    lcd.write(0x1);
-  }
-  
+      
   // Clear screen
   lcd.write(0xFE);
   lcd.write(0x58);
@@ -278,36 +258,64 @@ void update_lcd_display(int state) {
   lcd.write(1);
   lcd.write(2);
   
+  // Change background color
+  lcd.write(0xFE);
+  lcd.write(0xD0);
+      
   // Display state
   switch(state) {
     
     case STANDBY:
+          
+      // Blue Color
+      lcd.write((uint8_t)0x00);
+      lcd.write((uint8_t)0x00);
+      lcd.write(0x255);
       lcd.print(" STAND BY");
       break;
   
     case WARMING:
+      
+      // Blue Color
+      lcd.write((uint8_t)0x00);
+      lcd.write((uint8_t)0x00);
+      lcd.write(0x255);
       lcd.print(" WARMING UP");
       break;
   
     case READY:
+      
+      // Green Color
+      lcd.write((uint8_t)0x00);
+      lcd.write(0x255);
+      lcd.write((uint8_t)0x00);
       lcd.print(" READY");
       break;
   
     case COOLING:
+      
+      // Blue Color
+      lcd.write((uint8_t)0x00);
+      lcd.write((uint8_t)0x00);
+      lcd.write(0x255);
       lcd.print(" COOLING");
-      if (temperature() > 100) {
-      break;
-      }
-      if (temperature() > 30) {
-      break;
-      }
       break;
   
     case LOCKED:
+      
+      // Red Color
+      lcd.write(0x255);
+      lcd.write((uint8_t)0x00);
+      lcd.write((uint8_t)0x00);
       lcd.print(" LOCKED");
       break;
   
     case NET_ERROR:
+      
+      // Red Color
+      lcd.write(0x255);
+      lcd.write((uint8_t)0x00);
+      lcd.write((uint8_t)0x00);
       lcd.print("NETWORK ERROR...");
       break;
   
@@ -488,6 +496,8 @@ int send_event() {
   // Display Json from buffer (Serial)
   Serial.print(F("Server request:"));
   Serial.println(databuffer);
+  // Show size of buffer (Serial)
+  Serial.print(F("Server request buffer size:"));
   Serial.println(strlen(databuffer));
   
   // HTTP request:
@@ -500,14 +510,19 @@ int send_event() {
   client.println(databuffer);
 
   // Delay for server feedback
-  Serial.println("");
-  Serial.println(F("Delay..."));
-  Serial.println("");
-  delay(5000);
+  //Serial.println("");
+  Serial.println(F("\nWaiting for server response...\n"));
+  //Serial.println("");
+  //delay(5000);
 
-  while(!client.available())
+  int wait = 10;
+  while(!client.available()) {
+    delay(1000);
+    wait--;
+    if(wait <= 0) return NET_ERROR;
+  }
   
-  Serial.print(F("Answer from server:"));
+  Serial.print(F("Response from server:"));
   
   memset(databuffer, 0, sizeof(databuffer));
   int i = 0;
@@ -532,7 +547,7 @@ int send_event() {
     Serial.println("JsonParser.parse() failed");
     return DO_NOTHING;
   }
-  ArduinoJson::Parser::JsonObject response = root["Response"];
+  ArduinoJson::Parser::JsonObject response = root["response"];
   char* code = response["code"];
   
   Serial.print(F("Return code: "));
@@ -684,8 +699,12 @@ bool connect() {
 void loop() {
   
   // Initial run for current sensors for calibration
+  Serial.println(F("--> Calibration of current sensors below"));
+  Irms1 = ac_power();
   Irms1 = ac_power();
   Irms2 = ac_manual();
+  Irms2 = ac_manual();
+  Serial.println(F("--> Calibration done"));
   
   do {
 
