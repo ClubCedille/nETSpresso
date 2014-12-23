@@ -289,11 +289,11 @@ class Netspresso extends AppModel {
 												)
 						);
 
-		$codes = array (	'Ok'		=> '000',
-							'Warm-Up'	=> '001',
-							'Cold-Down' => '002',
-							'Lock-Down' => '003',
-							'Override'	=> '004',
+		$codes = array (	'Ok'		=> '0',
+							'Warm-Up'	=> '1',
+							'Cold-Down'	=> '2',
+							'Lock-Down'	=> '3',
+							'Override'	=> '4',
 						);
 
 		// For debug
