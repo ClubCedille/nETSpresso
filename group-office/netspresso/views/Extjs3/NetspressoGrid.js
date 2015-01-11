@@ -79,7 +79,7 @@ GO.netspresso.NetspressoGrid = function(config){
 		url: GO.url('netspresso/netspresso/store'),
 		fields: ['id','event_id','calendar_name','start_time','end_time','status', 'is_organizer'],
 		remoteSort: true,
-		model: 'GO_Netspresso_Model_Netspresso'
+		model: 'GO\\Netspresso\\Model\\Netspresso'
 	});
 	
 	//Adding the gridview to the grid panel

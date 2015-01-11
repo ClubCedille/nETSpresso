@@ -11,7 +11,10 @@
  * @property date $leftoffice
  * @property float $income
  */
-class GO_Netspresso_Model_Netspresso extends GO_Base_Db_ActiveRecord {
+
+namespace GO\Netspresso\Model;
+
+class Netspresso extends \GO\Base\Db\ActiveRecord {
 	
 	/**
 	 * Returns a static model of itself

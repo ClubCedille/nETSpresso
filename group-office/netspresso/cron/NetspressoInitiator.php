@@ -103,7 +103,7 @@ class GO_Netspresso_Cron_NetspressoInitiator extends GO_Base_Cron_AbstractCron {
 
 		// calculate start and end period times	
 		$start = strtotime("now");
-		$end   = strtotime('+10 minutes');
+		$end   = strtotime('+5 minutes');
 		
 		// Search events associated to the nÉTSpresso resource
 		//$events = self::findNextEvents($resource_calendar_id, $start, $end);
@@ -166,7 +166,8 @@ class GO_Netspresso_Cron_NetspressoInitiator extends GO_Base_Cron_AbstractCron {
 				'start_time'		=> date(DateTime::ISO8601, $event->start_time),
 				'end_time'			=> date(DateTime::ISO8601, $event->end_time),
 				'subjet'			=> $event->name,
-				'status'			=> $event->status
+				'status'			=> $event->status,
+				'ready_time'		=> date(DateTime::ISO8601, strtotime("now"))
 			)
 		);
 		GO::debug("Netspresso::sendToNetspreso (" . var_export($message, true) . ")");

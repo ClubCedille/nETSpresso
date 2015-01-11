@@ -1,10 +1,12 @@
 <?php
 
+namespace GO\Netspresso\Controller;
+
 require_once 'HTTP/Request2.php';
 
-class GO_Netspresso_Controller_Netspresso extends GO_Base_Controller_AbstractModelController {
+class NetspressoController extends \GO\Base\Controller\AbstractModelController {
 
-	protected $model = 'GO_Netspresso_Model_Netspresso';
+	protected $model = 'GO\Netspresso\Model\Netspresso';
 
 // 	/**
 // 	 * Tell the controller to change some column values
@@ -32,7 +34,7 @@ class GO_Netspresso_Controller_Netspresso extends GO_Base_Controller_AbstractMod
 
  	protected function actionConfiguration($params) {
 
-GO::debug("GO_Netspresso_Controller_Netspresso::display function called !");
+GO::debug("NetspressoController::display function called !");
 
 //return '{"date":"2014-08-25T18:45:22-0400","status":"Stand-By","temperature":"30"}';
 //return "{\"success\":true,\"results\":[{\"date\":\"2014-08-25T18:45:22-0400\",\"status\":\"Stand-By\",\"temperature\":30}],\"total\":1}";

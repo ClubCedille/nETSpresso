@@ -1,5 +1,8 @@
 <?php
-class GO_Netspresso_NetspressoModule extends GO_Base_Module{
+
+namespace GO\Netspresso;
+
+class NetspressoModule extends \GO\Base\Module{
 
 	public function autoInstall() {
 			return true;
@@ -18,7 +21,7 @@ class GO_Netspresso_NetspressoModule extends GO_Base_Module{
 		// Every model that is derived from GO_Base_Db_ActiveRecord has a "save" and "delete" event. 
 		// They listeners will be called with the model as the first argument.
 		// attaching to the GO_Calendar_Model_Event model
-		GO_Calendar_Model_Event::model()->addListener('save', 'GO_Netspresso_NetspressoModule', 'save');
+		\GO\Calendar\Model\Event::model()->addListener('save', 'GO\Netspresso\NetspressoModule', 'save');
 		//GO_Calendar_Model_Event::model()->addListener('delete', 'GO_Netspresso_NetspressoModule', 'delete');
 
 		// Every controller that is derived from GO_Base_Controller_AbstractModelController 
