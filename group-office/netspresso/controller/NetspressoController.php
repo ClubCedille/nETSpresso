@@ -34,7 +34,7 @@ class NetspressoController extends \GO\Base\Controller\AbstractModelController {
 
  	protected function actionConfiguration($params) {
 
-GO::debug("NetspressoController::display function called !");
+\GO::debug("NetspressoController::display function called !");
 
 //return '{"date":"2014-08-25T18:45:22-0400","status":"Stand-By","temperature":"30"}';
 //return "{\"success\":true,\"results\":[{\"date\":\"2014-08-25T18:45:22-0400\",\"status\":\"Stand-By\",\"temperature\":30}],\"total\":1}";
@@ -47,7 +47,7 @@ return array ('success' => 'true', 'results' => array('date' => '2014-08-25T18:4
 
 	private static function getStatus($params) {
 
-		//GO::debug("::getStatus (" . var_export($data, true) . ")");
+		//\GO::debug("::getStatus (" . var_export($data, true) . ")");
 
 		// Set the destination URL
 		$URL = 'http://netspresso.cedille.club/go/status.json?box=netspresso01';
@@ -68,19 +68,19 @@ return array ('success' => 'true', 'results' => array('date' => '2014-08-25T18:4
 			$response = $request->send();
 			
     		if (200 == $response->getStatus()) {
-        		GO::debug("::getStatus response : " . $response->getBody());
+        		\GO::debug("::getStatus response : " . $response->getBody());
         		return $response->getBody();
 
     		} else {    	
-    			GO::debug("::getStatus Unexpected response: " . $response->getStatus() . ' ' . $response->getReasonPhrase());
+    			\GO::debug("::getStatus Unexpected response: " . $response->getStatus() . ' ' . $response->getReasonPhrase());
     		}
 		} catch (HTTP_Request2_Exception $e) {
-    		GO::debug("::getStatus Error: " . $e->getMessage() );
+    		\GO::debug("::getStatus Error: " . $e->getMessage() );
 		}
 		
 		//debug the result
-		//GO::debug("::getStatus HTTP response status => " . $result->status() );
-		//GO::debug("::getStatus HTTP request body => " . $result->getRequestBody() );
+		//\GO::debug("::getStatus HTTP response status => " . $result->status() );
+		//\GO::debug("::getStatus HTTP request body => " . $result->getRequestBody() );
 
 	}
 

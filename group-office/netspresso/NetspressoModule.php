@@ -7,13 +7,17 @@ class NetspressoModule extends \GO\Base\Module{
 	public function autoInstall() {
 			return true;
 	}
+	
+	public function package() {
+		return self::PACKAGE_CUSTOM;
+	}
 
 	public function author() {
-			return 'Club Cedille - ETS';
+			return 'Club Cedille - ÉTS';
 	}
 
 	public function authorEmail() {
-			return 'webmaster@cedille.club';
+			return 'cedille@etsmtl.ca';
 	}
 
 	public static function initListeners() {
@@ -43,16 +47,16 @@ class NetspressoModule extends \GO\Base\Module{
 
 	public static function save(&$model, $wasNew){
 		//do something with the GO_Calendar_Model_Event module here
-// 		GO::debug("Netspresso: saving an event !");
+// 		\GO::debug("Netspresso: saving an event !");
 // 
-// 		GO::debug("Netspresso: export => " . var_export(get_object_vars($model), true));		
+// 		\GO::debug("Netspresso: export => " . var_export(get_object_vars($model), true));		
 // 		$myClassReflection = new ReflectionClass(get_class($model));
 //       	$secret = $myClassReflection->getProperty('_attributes');
 //       	$secret->setAccessible(true);	
-// 		GO::debug("Netspresso: export => " . var_export($secret->getValue($model), true));
+// 		\GO::debug("Netspresso: export => " . var_export($secret->getValue($model), true));
 
 		if (! $model->isResource()) {
-// 			GO::debug("Netspresso: It's not an resource event !");
+// 			\GO::debug("Netspresso: It's not an resource event !");
 			return;
 		}
 		
@@ -63,8 +67,8 @@ class NetspressoModule extends \GO\Base\Module{
 		}
 		
  		if ($model->status !== 'NEEDS-ACTION') {
-// 			GO::debug("Netspresso: Status => " . $model->status);
-// 			GO::debug("Netspresso: This resource event doesn't need action!");
+// 			\GO::debug("Netspresso: Status => " . $model->status);
+// 			\GO::debug("Netspresso: This resource event doesn't need action!");
 			return;
 		}
 
@@ -81,27 +85,27 @@ class NetspressoModule extends \GO\Base\Module{
 
 	public static function delete(&$model){
 		//do something with the GO_Calendar_Model_Event module here
-		GO::debug("Netspresso: deleting an event !");
+		\GO::debug("Netspresso: deleting an event !");
 	}
 
 	public static function submit(&$controller, &$response, &$model, &$params, $modifiedAttributes){
 		//do something with the GO_Calendar_Controller_Event module here
-		GO::debug("Netspresso: submiting an event !");
+		\GO::debug("Netspresso: submiting an event !");
 	}
 
 	public static function load(&$controller, &$response, &$model, &$params){
 		//do something with the GO_Calendar_Controller_Event module here
-		GO::debug("Netspresso: loading an event !");
+		\GO::debug("Netspresso: loading an event !");
 	}
 
 	public static function store(&$controller, &$response, &$model, &$params){
 		//do something with the GO_Calendar_Controller_Event module here
-		GO::debug("Netspresso: storing an event !");
+		\GO::debug("Netspresso: storing an event !");
 	}
 
 	public static function display(&$controller, &$response, &$model){
 		//do something with the GO_Calendar_Controller_Event module here
-		GO::debug("Netspresso: displaying an event !");
+		\GO::debug("Netspresso: displaying an event !");
 	}
 
 }

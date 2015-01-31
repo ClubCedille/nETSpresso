@@ -1,8 +1,10 @@
 <?php
 
+namespace GO\Netspresso\Cron;
+
 require_once 'HTTP/Request2.php';
 
-class GO_Netspresso_Cron_NetspressoInitiator extends GO_Base_Cron_AbstractCron {
+class NetspressoInitiator extends \GO\Base\Cron\AbstractCron {
 	
 	/**
 	 * Return true or false to enable the selection for users and groups for 
@@ -22,7 +24,7 @@ class GO_Netspresso_Cron_NetspressoInitiator extends GO_Base_Cron_AbstractCron {
 	 * @return String
 	 */
 	public function getLabel(){
-		return GO::t('cronNetspressoInitiator','netspresso');
+		return \GO::t('cronNetspressoInitiator','netspresso');
 	}
 	
 	/**
@@ -31,7 +33,7 @@ class GO_Netspresso_Cron_NetspressoInitiator extends GO_Base_Cron_AbstractCron {
 	 * @return String
 	 */
 	public function getDescription(){
-		return GO::t('cronNetspressoInitiatorDescription','netspresso');
+		return \GO::t('cronNetspressoInitiatorDescription','netspresso');
 	}
 	
 	
@@ -43,9 +45,9 @@ class GO_Netspresso_Cron_NetspressoInitiator extends GO_Base_Cron_AbstractCron {
 	 * @return Array The array with the incomming events 
 	 */	 
 	public function getEventsForPeriod($calendar_id, $start, $end) {
-		return GO_Calendar_Model_Event::model()->findCalculatedForPeriod(
-			GO_Base_Db_FindParams::newInstance()->criteria(
-				GO_Base_Db_FindCriteria::newInstance()->addCondition('calendar_id', $calendar_id)
+		return \GO\Calendar\Model\Event::model()->findCalculatedForPeriod(
+			\GO\Base\Db\FindParams::newInstance()->criteria(
+				\GO\Base\Db\FindCriteria::newInstance()->addCondition('calendar_id', $calendar_id)
 			)->select(),
 			$start, 
 			$end
@@ -60,21 +62,21 @@ class GO_Netspresso_Cron_NetspressoInitiator extends GO_Base_Cron_AbstractCron {
 	 */	 
 	private function findNextEvents($calendar_id, $start, $end) {
 		
-		$joinCriteria = GO_Base_Db_FindCriteria::newInstance()
+		$joinCriteria = \GO\Base\Db\FindCriteria::newInstance()
 //						->addCondition('user_id', GO::user()->id,'=','pt')
 						->addCondition('calendar_id', 'pt.calendar_id', '=', 't', true, true);
 		
-		$calendarJoinCriteria = GO_Base_Db_FindCriteria::newInstance()
+		$calendarJoinCriteria = \GO\Base\Db\FindCriteria::newInstance()
 						->addCondition('calendar_id', 'tl.id', '=', 't', true, true);
 		
-		$findParams = GO_Base_Db_FindParams::newInstance()
+		$findParams = \GO\Base\Db\FindParams::newInstance()
 						->select('t.*, tl.name AS calendar_name')
 						->ignoreAcl()
-						->join(GO_Calendar_Model_PortletCalendar::model()->tableName(),$joinCriteria,'pt')
-						->join(GO_Calendar_Model_Calendar::model()->tableName(), $calendarJoinCriteria,'tl');
+						->join(\GO\Calendar\Model\PortletCalendar::model()->tableName(),$joinCriteria,'pt')
+						->join(\GO\Calendar\Model\Calendar::model()->tableName(), $calendarJoinCriteria,'tl');
 		
 			
-		$events = GO_Calendar_Model_Event::model()->findCalculatedForPeriod($findParams, $start, $end);
+		$events = \GO\Calendar\Model\Event::model()->findCalculatedForPeriod($findParams, $start, $end);
 		//GO::debug("Netspresso::findNextEvents events => " . var_export($events, true));
 		
 		return $events;
@@ -93,10 +95,10 @@ class GO_Netspresso_Cron_NetspressoInitiator extends GO_Base_Cron_AbstractCron {
 	 * @param GO_Base_Cron_CronJob $cronJob
 	 * @param GO_Base_Model_User $user [OPTIONAL]
 	 */
-	public function run(GO_Base_Cron_CronJob $cronJob,GO_Base_Model_User $user = null){
+	public function run(\GO\Base\Cron\CronJob $cronJob,\GO\Base\Model\User $user = null){
 		
 		// Run the as root
-		GO::session()->runAsRoot();
+		\GO::session()->runAsRoot();
 		
 		// Get the calendar id associated to the nÉTSpresso resource
 		$resource_calendar_id = 6;
@@ -113,11 +115,11 @@ class GO_Netspresso_Cron_NetspressoInitiator extends GO_Base_Cron_AbstractCron {
 		foreach($events as $event){
 		
 			$record = $event->getResponseData();
- 			//GO::debug("Netspresso: next event => " . var_export($record, true));
+ 			//\GO::debug("Netspresso: next event => " . var_export($record, true));
  			
 			// Ensure the resource status is CONFIRMED
-			if ($record['status'] != GO_Calendar_Model_Event::STATUS_CONFIRMED) {
-				GO::debug("Netspresso: resource status (" . $record['status'] . ") is not CONFIRMED");
+			if ($record['status'] != \GO\Calendar\Model\Event::STATUS_CONFIRMED) {
+				\GO::debug("Netspresso: resource status (" . $record['status'] . ") is not CONFIRMED");
 				continue;
 			}
 			
@@ -126,8 +128,8 @@ class GO_Netspresso_Cron_NetspressoInitiator extends GO_Base_Cron_AbstractCron {
 			//GO::debug("Netspresso::run event time between " . date("Y-m-d H:i", $event->getAlternateStartTime()) . " and " . date("Y-m-d H:i", $event->getAlternateEndTime()));				
 			
 			if( $end < $event->getAlternateStartTime() or $event->getAlternateStartTime() < $start) {
-				GO::debug("Netspresso::run runjb time between " . date("Y-m-d H:i", $start) . " and " . date("Y-m-d H:i", $end));
-				GO::debug("Netspresso::run event time between " . date("Y-m-d H:i", $event->getAlternateStartTime()) . " and " . date("Y-m-d H:i", $event->getAlternateEndTime()));				
+				\GO::debug("Netspresso::run runjb time between " . date("Y-m-d H:i", $start) . " and " . date("Y-m-d H:i", $end));
+				\GO::debug("Netspresso::run event time between " . date("Y-m-d H:i", $event->getAlternateStartTime()) . " and " . date("Y-m-d H:i", $event->getAlternateEndTime()));				
 				continue;
 			}
 			
@@ -148,7 +150,7 @@ class GO_Netspresso_Cron_NetspressoInitiator extends GO_Base_Cron_AbstractCron {
 	
 	private static function sendEventToNetspreso($event) {
 
-		//GO::debug("Netspresso::sendToNetspreso (" . var_export($data, true) . ")");
+		//\GO::debug("Netspresso::sendToNetspreso (" . var_export($data, true) . ")");
 		
 		// Prepare the request body
 		$message = array (
@@ -167,10 +169,17 @@ class GO_Netspresso_Cron_NetspressoInitiator extends GO_Base_Cron_AbstractCron {
 				'end_time'			=> date(DateTime::ISO8601, $event->end_time),
 				'subjet'			=> $event->name,
 				'status'			=> $event->status,
+<<<<<<< Updated upstream
 				'ready_time'		=> date(DateTime::ISO8601, strtotime("now"))
+=======
+				// Get ready 5 minutes before the actual event
+				'ready_time'		=> date(DateTime::ISO8601, $event->start_time - 300),
+				// Stand-by once the event is finished
+				'stdby_time'		=> date(DateTime::ISO8601, $event->end_time),
+>>>>>>> Stashed changes
 			)
 		);
-		GO::debug("Netspresso::sendToNetspreso (" . var_export($message, true) . ")");
+		\GO::debug("Netspresso::sendToNetspreso (" . var_export($message, true) . ")");
 
 		// Set the destination URL
 		$URL = 'http://netspresso.cedille.club/go/event.json';
@@ -191,15 +200,15 @@ class GO_Netspresso_Cron_NetspressoInitiator extends GO_Base_Cron_AbstractCron {
 			$response = $request->send();
 			
     		if (200 == $response->getStatus()) {
-        		GO::debug("Netspresso::sendToNetspreso response : " . $response->getBody());
+        		\GO::debug("Netspresso::sendToNetspreso response : " . $response->getBody());
         		
         		$response = json_decode($response->getBody(), true);
 
     		} else {    	
-    			GO::debug("Netspresso::sendToNetspreso Unexpected response: " . $response->getStatus() . ' ' . $response->getReasonPhrase());
+    			\GO::debug("Netspresso::sendToNetspreso Unexpected response: " . $response->getStatus() . ' ' . $response->getReasonPhrase());
     		}
 		} catch (HTTP_Request2_Exception $e) {
-    		GO::debug("Netspresso::sendToNetspreso Error: " . $e->getMessage() );
+    		\GO::debug("Netspresso::sendToNetspreso Error: " . $e->getMessage() );
 		}
 		
 	}
