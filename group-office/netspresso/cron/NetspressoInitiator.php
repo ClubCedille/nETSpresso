@@ -169,14 +169,10 @@ class NetspressoInitiator extends \GO\Base\Cron\AbstractCron {
 				'end_time'			=> date(DateTime::ISO8601, $event->end_time),
 				'subjet'			=> $event->name,
 				'status'			=> $event->status,
-<<<<<<< Updated upstream
-				'ready_time'		=> date(DateTime::ISO8601, strtotime("now"))
-=======
 				// Get ready 5 minutes before the actual event
 				'ready_time'		=> date(DateTime::ISO8601, $event->start_time - 300),
 				// Stand-by once the event is finished
 				'stdby_time'		=> date(DateTime::ISO8601, $event->end_time),
->>>>>>> Stashed changes
 			)
 		);
 		\GO::debug("Netspresso::sendToNetspreso (" . var_export($message, true) . ")");
