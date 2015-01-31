@@ -6,6 +6,8 @@ require_once 'HTTP/Request2.php';
 
 class NetspressoInitiator extends \GO\Base\Cron\AbstractCron {
 	
+	const ISO8601 = "Y-m-d\TH:i:sO" ;
+	
 	/**
 	 * Return true or false to enable the selection for users and groups for 
 	 * this cronjob.
@@ -165,14 +167,14 @@ class NetspressoInitiator extends \GO\Base\Cron\AbstractCron {
 				'calendar_id'		=> $event->calendar_id,
 				'user_id'			=> $event->user_id,
 				'username'			=> $event->user->getName(),
-				'start_time'		=> date(DateTime::ISO8601, $event->start_time),
-				'end_time'			=> date(DateTime::ISO8601, $event->end_time),
+				'start_time'		=> date(\DateTime::ISO8601, $event->start_time),
+				'end_time'			=> date(\DateTime::ISO8601, $event->end_time),
 				'subjet'			=> $event->name,
 				'status'			=> $event->status,
 				// Get ready 5 minutes before the actual event
-				'ready_time'		=> date(DateTime::ISO8601, $event->start_time - 300),
+				'ready_time'		=> date(\DateTime::ISO8601, $event->start_time - 300),
 				// Stand-by once the event is finished
-				'stdby_time'		=> date(DateTime::ISO8601, $event->end_time),
+				'stdby_time'		=> date(\DateTime::ISO8601, $event->end_time),
 			)
 		);
 		\GO::debug("Netspresso::sendToNetspreso (" . var_export($message, true) . ")");
@@ -181,7 +183,7 @@ class NetspressoInitiator extends \GO\Base\Cron\AbstractCron {
 		$URL = 'http://netspresso.cedille.club/go/event.json';
 
 		//create the http request object
-		$request = new HTTP_Request2($URL, HTTP_Request2::METHOD_POST);
+		$request = new \HTTP_Request2($URL, \HTTP_Request2::METHOD_POST);
 
 		//add the headers
 		$headers = array('Content-Type' => 'application/json',
@@ -203,7 +205,7 @@ class NetspressoInitiator extends \GO\Base\Cron\AbstractCron {
     		} else {    	
     			\GO::debug("Netspresso::sendToNetspreso Unexpected response: " . $response->getStatus() . ' ' . $response->getReasonPhrase());
     		}
-		} catch (HTTP_Request2_Exception $e) {
+		} catch (\HTTP_Request2_Exception $e) {
     		\GO::debug("Netspresso::sendToNetspreso Error: " . $e->getMessage() );
 		}
 		
