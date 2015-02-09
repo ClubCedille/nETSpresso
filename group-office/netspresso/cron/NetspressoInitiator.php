@@ -7,6 +7,7 @@ require_once 'HTTP/Request2.php';
 class NetspressoInitiator extends \GO\Base\Cron\AbstractCron {
 	
 	const ISO8601 = "Y-m-d\TH:i:sO" ;
+	const SEARCH_OFSFSET = 300;
 	
 	/**
 	 * Return true or false to enable the selection for users and groups for 
@@ -37,8 +38,6 @@ class NetspressoInitiator extends \GO\Base\Cron\AbstractCron {
 	public function getDescription(){
 		return \GO::t('cronNetspressoInitiatorDescription','netspresso');
 	}
-	
-	
 
 	/**
 	 * Get the incoming events for the associated calendar
@@ -101,21 +100,23 @@ class NetspressoInitiator extends \GO\Base\Cron\AbstractCron {
 		
 		// Run the as root
 		\GO::session()->runAsRoot();
-		
+
 		// Get the calendar id associated to the nÉTSpresso resource
-		$resource_calendar_id = 6;
+		//$resource_calendar_id = self::getConfigResourceId();
+		$resource_calendar_id = \GO\Netspresso\Model\NetspressoConfig::getResourceId();
 
 		// calculate start and end period times	
 		$start = strtotime("now");
-		$end   = strtotime('+5 minutes');
-		
+		//$end   = strtotime('+5 minutes');
+		$end   = $start + \GO\Netspresso\Model\NetspressoConfig::getReadyBefore() + self::SEARCH_OFSFSET;
+
 		// Search events associated to the nÉTSpresso resource
 		//$events = self::findNextEvents($resource_calendar_id, $start, $end);
 		$events = self::getEventsForPeriod($resource_calendar_id, $start, $end);
-		
+
 		// Parse events to locate next immediate event	
 		foreach($events as $event){
-		
+
 			$record = $event->getResponseData();
  			//\GO::debug("Netspresso: next event => " . var_export($record, true));
  			
@@ -141,7 +142,6 @@ class NetspressoInitiator extends \GO\Base\Cron\AbstractCron {
 		} //end foreach
 		
 	}
-	
 	
 	/**
 	 * Get the incoming events for the associated calendar
@@ -171,10 +171,8 @@ class NetspressoInitiator extends \GO\Base\Cron\AbstractCron {
 				'end_time'			=> date(\DateTime::ISO8601, $event->end_time),
 				'subjet'			=> $event->name,
 				'status'			=> $event->status,
-				// Get ready 5 minutes before the actual event
-				'ready_time'		=> date(\DateTime::ISO8601, $event->start_time - 300),
-				// Stand-by once the event is finished
-				'stdby_time'		=> date(\DateTime::ISO8601, $event->end_time),
+				'ready_time'		=> date(\DateTime::ISO8601, $event->start_time - \GO\Netspresso\Model\NetspressoConfig::getReadyBefore()),
+				'stdby_time'		=> date(\DateTime::ISO8601, $event->start_time + \GO\Netspresso\Model\NetspressoConfig::getStdbyAfter()),
 			)
 		);
 		\GO::debug("Netspresso::sendToNetspreso (" . var_export($message, true) . ")");

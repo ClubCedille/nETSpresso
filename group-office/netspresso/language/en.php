@@ -8,8 +8,8 @@ $l = array(
 	'name' => 'nETSpresso', //this name will appear in the Start menu -> modules section
 	'description' => 'This module etablish communication with the nETSpresso server', //this description will appear in the Start menu -> modules section
 	
-	'grid_title' => 'Events',
-	'dialog_title' => 'Resource Request',
+	'grid_title' => 'nÉTSpresoso requests',
+	'dialog_title' => 'Change request status',
 	'config_title' => 'Configuration',
 	'user_id' => 'User Id',
 	'calendar_id' => 'Calendar Id',

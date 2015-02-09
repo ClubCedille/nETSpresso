@@ -59,12 +59,18 @@ class NetspressoModule extends \GO\Base\Module{
 // 			\GO::debug("Netspresso: It's not an resource event !");
 			return;
 		}
-		
-		if ($model->calendar->name !== 'nÉTSpresso') {
+
+		if ($model->calendar->id !== \GO\Netspresso\Model\NetspressoConfig::getResourceId()) {
 // 			GO::debug("Netspresso: Calendar Name => " . $model->calendar->name);
 // 			GO::debug("Netspresso: It's not an nÉTSpresso resource event !");
 			return;
 		}
+		
+//		if ($model->calendar->name !== 'nÉTSpresso') {
+// 			GO::debug("Netspresso: Calendar Name => " . $model->calendar->name);
+// 			GO::debug("Netspresso: It's not an nÉTSpresso resource event !");
+//			return;
+//		}
 		
  		if ($model->status !== 'NEEDS-ACTION') {
 // 			\GO::debug("Netspresso: Status => " . $model->status);
@@ -73,7 +79,7 @@ class NetspressoModule extends \GO\Base\Module{
 		}
 
 		// If resource is nÉTSpresso, automatically set it to CONFIRMED. 
- 		$model->status = 'CONFIRMED';   // GO_Calendar_Model_Event::STATUS_CONFIRMED
+ 		$model->status = 'CONFIRMED';   // \GO\Calendar\Model\Event::STATUS_CONFIRMED
  		$model->save(true);
 
 // TODO : Send e-mail to user for confirmation
@@ -85,27 +91,27 @@ class NetspressoModule extends \GO\Base\Module{
 
 	public static function delete(&$model){
 		//do something with the GO_Calendar_Model_Event module here
-		\GO::debug("Netspresso: deleting an event !");
+		//\GO::debug("Netspresso: deleting an event !");
 	}
 
 	public static function submit(&$controller, &$response, &$model, &$params, $modifiedAttributes){
 		//do something with the GO_Calendar_Controller_Event module here
-		\GO::debug("Netspresso: submiting an event !");
+		//\GO::debug("Netspresso: submiting an event !");
 	}
 
 	public static function load(&$controller, &$response, &$model, &$params){
 		//do something with the GO_Calendar_Controller_Event module here
-		\GO::debug("Netspresso: loading an event !");
+		//\GO::debug("Netspresso: loading an event !");
 	}
 
 	public static function store(&$controller, &$response, &$model, &$params){
 		//do something with the GO_Calendar_Controller_Event module here
-		\GO::debug("Netspresso: storing an event !");
+		//\GO::debug("Netspresso: storing an event !");
 	}
 
 	public static function display(&$controller, &$response, &$model){
 		//do something with the GO_Calendar_Controller_Event module here
-		\GO::debug("Netspresso: displaying an event !");
+		//\GO::debug("Netspresso: displaying an event !");
 	}
 
 }

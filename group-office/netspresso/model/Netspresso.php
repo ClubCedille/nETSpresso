@@ -3,13 +3,6 @@
 /**
  * The Netspresso model
  * 
- * @property int $id
- * @property int $party_id
- * @property string $firstname
- * @property string $lastame
- * @property date $tookoffice
- * @property date $leftoffice
- * @property float $income
  */
 
 namespace GO\Netspresso\Model;
