@@ -40,7 +40,7 @@ class Netspresso extends AppModel {
 // 				$this->log("NetspressoModel::setEventTime caught exception: " . $e->getMessage());
 // 				$this->log("NetspressoModel::setEventTime input data: " . var_export($state, true));
 // 		}
-	} // end of setEventTime	
+	} // end of setEventTime
 
 /**
  * method getEventTime
@@ -54,6 +54,34 @@ class Netspresso extends AppModel {
 	{
 		return $this->get('ev_time');
 	}
+
+
+/**
+ * method setEventStdbyTime
+ *
+ * @throws none
+ * @param  string $time
+ * @return none
+ */
+	public function setEventStdbyTime($time)
+	{
+		$this->set('ev_stdby', $time);
+	} // end of setEventStdbyTime
+
+/**
+ * method getEventStdbyTime
+ *
+ * @throws none
+ * @param  none
+ * @return string $time
+ */
+
+	public function getEventStdbyTime()
+	{
+		return $this->get('ev_stdby');
+	} // end of getEventStdbyTime
+
+
 
 /**
  * method setEventState
@@ -377,22 +405,22 @@ class Netspresso extends AppModel {
 		$elapsed = strtotime("now") - strtotime($this->getEventTime());
 		$this->log("NetspressoModel::evaluateEventState elapsed time: " . round($elapsed / 60) . " minutes" );
 		
-		// Adjust event 'Ready' state to 'Cooling-Down' after 2 minutes ~ 120 secondes
+		// Adjust event 'Ready' state to 'Cooling-Down' rigth after the requested Stand-By time
 		//
 		if ($this->getEventState() === 'Ready' and 
-		(strtotime("now") - strtotime($this->getEventTime()) > 120))
+		(strtotime("now") - strtotime($this->getEventStdbyTime()) > 0))
 		{
 			$this->setEventState('Cooling-Down');
-			$this->setEventTime(date("Y-m-d H:i:s"));
+			//$this->setEventTime(date("Y-m-d H:i:s"));
 		}
 		
-		// Adjust event 'Cooling-Down' state to 'Stand-By' after 3 minutes ~ 180 secondes
+		// Adjust event 'Cooling-Down' state to 'Stand-By' 3 minutes after requested Stand-By time
 		//		
 		if ($this->getEventState() === 'Cooling-Down' and 
-		(strtotime("now") - strtotime($this->getEventTime()) > 180))
+		(strtotime("now") - strtotime($this->getEventStdbyTime()) > 180))
 		{
 			$this->setEventState('Stand-By');
-			$this->setEventTime(date("Y-m-d H:i:s"));
+			//$this->setEventTime(date("Y-m-d H:i:s"));
 		}
 	
 		//$this->log("NetspressoModel::evaluateEventState modified data: " . var_export($this->data, true));

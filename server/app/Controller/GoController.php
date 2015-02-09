@@ -91,7 +91,8 @@ class GoController extends AppController {
 		//
 		if ($this->Netspresso->getEventState() !== 'Locked') {
 			$this->Netspresso->setEventState($jsonData['box']['state']);
-			$this->Netspresso->setEventTime($jsonData['event']['start_time']);
+			$this->Netspresso->setEventTime($jsonData['event']['ready_time']);
+			$this->Netspresso->setEventStdbyTime($jsonData['event']['stdby_time']);
 		}
 		
 		// Try to save the new state
@@ -142,7 +143,7 @@ class GoController extends AppController {
  */
 	public function status() {
 		
-		// Only handle POST method
+		// Only handle GET method
 		$this->request->allowMethod('get');
 
 		// Get box name received from client
