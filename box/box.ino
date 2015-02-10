@@ -467,7 +467,7 @@ int send_event() {
   current_manual["v"] = Irms2;
   current.add(current_manual);  
   
-  JsonObject<1> main_temperature;
+  JsonObject<2> main_temperature;
   main_temperature["u"] = "C";
   main_temperature["v"] = temp;
   temperatures.add(main_temperature); 
@@ -667,7 +667,7 @@ bool connect() {
   client.stop();
   
   // Check if server is still connected
-  if (client.connect(server, 80)) {
+  if (client.connect(server, 8080)) {
     Serial.println(F("--> Connected!"));
     return true;
   } 
