@@ -276,8 +276,8 @@ class Netspresso extends AppModel {
 	{
 
 		// For debug
-		$this->log("NetspressoModel::getNextAction current state: " . $state);
-		$this->log("NetspressoModel::getNextAction next state: " . $this->getEventState());
+		//$this->log("NetspressoModel::getNextAction current state: " . $state);
+		//$this->log("NetspressoModel::getNextAction next state: " . $this->getEventState());
 
 		// Actions are build based on the current state
 		$actions = array (	'Stand-By' => array (
@@ -335,7 +335,7 @@ class Netspresso extends AppModel {
 		$code = $codes[$action];
 
 		// For debug
-		$this->log("NetspressoModel::getNextAction output " . $code . " - " . $action);
+		//$this->log("NetspressoModel::getNextAction output " . $code . " - " . $action);
 
 		return array('code' => $code, 'message' => $action);
 
@@ -403,7 +403,7 @@ class Netspresso extends AppModel {
 
 		// Compute the elapsed time since last call
 		$elapsed = strtotime("now") - strtotime($this->getEventTime());
-		$this->log("NetspressoModel::evaluateEventState elapsed time: " . round($elapsed / 60) . " minutes" );
+		//$this->log("NetspressoModel::evaluateEventState elapsed time: " . round($elapsed / 60) . " minutes" );
 		
 		// Adjust event 'Ready' state to 'Cooling-Down' rigth after the requested Stand-By time
 		//

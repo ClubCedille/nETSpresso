@@ -86,7 +86,7 @@ private function json_decompress($received){
             $sensor = array(
                 //Build the sensor name
                 "sensor" => sprintf($nameFormat, $boxName, $sensorType, $sensorIndex),
-                "acquired" => date("c")
+                "acquired" => date("Y-m-d H:i:s")
             );
 
             if(!is_array($val)) {
@@ -96,7 +96,7 @@ private function json_decompress($received){
             } else {
                 // When the value is an object, map the keys
                 $sensor["units"] = $this->expand_units($val["u"]);
-                $sensor["value"] = $val["v"];
+                $sensor["value"] = isset($val["v"])?$val["v"]:$received["box"]["t"];
             }
 
             // Add the sensor to the metrics array
@@ -258,7 +258,7 @@ private function expand_units($unitType) {
 		}
 
 		//For debuging
-		$this->log("NetspressoController::heartbeat input data: " . var_export($heartbeat, true));
+		//$this->log("NetspressoController::heartbeat input data: " . var_export($heartbeat, true));
 
 		// Save metrics
 		if(!is_null($heartbeat['metrics']) and $heartbeat['metrics'] != false) {
