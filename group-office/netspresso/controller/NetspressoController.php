@@ -50,7 +50,7 @@ return array ('success' => 'true', 'results' => array('date' => '2014-08-25T18:4
 		//\GO::debug("::getStatus (" . var_export($data, true) . ")");
 
 		// Set the destination URL
-		$URL = 'http://netspresso.cedille.club/go/status.json?box=netspresso01';
+		$URL = 'http://netspresso.cedille.club:8080/go/status.json?box=netspresso01';
 
 		//create the http request object
 		$request = new HTTP_Request2($URL, HTTP_Request2::METHOD_GET);

@@ -178,7 +178,7 @@ class NetspressoInitiator extends \GO\Base\Cron\AbstractCron {
 		\GO::debug("Netspresso::sendToNetspreso (" . var_export($message, true) . ")");
 
 		// Set the destination URL
-		$URL = 'http://netspresso.cedille.club/go/event.json';
+		$URL = 'http://netspresso.cedille.club:8080/go/event.json';
 
 		//create the http request object
 		$request = new \HTTP_Request2($URL, \HTTP_Request2::METHOD_POST);
