@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS `netspresso_config` (
 );
 
 INSERT INTO `netspresso_config` (`id`, `ready_before`, `stdby_after`, `resource_id`) 
-VALUES ('1', '300', '1200', '6');
+VALUES ('1', '300', '1200', 'XXX');
 
 
 DROP TABLE IF EXISTS `go_links_netspresso_events`;
