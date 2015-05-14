@@ -36,7 +36,7 @@ using namespace ArduinoJson::Generator;
 SoftwareSerial lcd = SoftwareSerial(0,2);
 
 // IP Address of nETSpresso server
-char server[] = "192.168.1.57";
+char server[] = "142.137.243.18";
 
 // Arduino Ethernet's MAC address
 byte mac[] = { 0x90, 0xA2, 0xDA, 0x0E, 0xDC, 0x1E };
@@ -502,7 +502,7 @@ int send_event() {
   
   // HTTP request:
   client.println(F("POST /netspresso/heartbeat.json HTTP/1.1"));
-  client.println(F("Host: 192.168.1.57")); 
+  client.println(F("Host: 142.137.243.18")); 
   client.println(F("Content-Type: application/json;"));
   client.print(F("Content-Length: "));
   client.println(strlen(databuffer));
