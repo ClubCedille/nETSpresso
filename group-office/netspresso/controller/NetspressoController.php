@@ -34,13 +34,13 @@ class NetspressoController extends \GO\Base\Controller\AbstractModelController {
 
  	protected function actionConfiguration($params) {
 
-\GO::debug("NetspressoController::display function called !");
+		\GO::debug("NetspressoController::display function called !");
 
 //return '{"date":"2014-08-25T18:45:22-0400","status":"Stand-By","temperature":"30"}';
 //return "{\"success\":true,\"results\":[{\"date\":\"2014-08-25T18:45:22-0400\",\"status\":\"Stand-By\",\"temperature\":30}],\"total\":1}";
 //return self::getStatus($params);
 
-return array ('success' => 'true', 'results' => array('date' => '2014-08-25T18:45:22-0400', 'status' => 'Stand-By', 'temperature' => 30), 'total' => 1);
+		return array ('success' => 'true', 'results' => array('date' => '2014-08-25T18:45:22-0400', 'status' => 'Stand-By', 'temperature' => 30), 'total' => 1);
 
  	}
 
@@ -50,7 +50,7 @@ return array ('success' => 'true', 'results' => array('date' => '2014-08-25T18:4
 		//\GO::debug("::getStatus (" . var_export($data, true) . ")");
 
 		// Set the destination URL
-		$URL = 'http://netspresso.cedille.club:8080/go/status.json?box=netspresso01';
+		$URL = 'http://critias.etsmtl.ca:8080/go/status.json?box=netspresso01';
 
 		//create the http request object
 		$request = new HTTP_Request2($URL, HTTP_Request2::METHOD_GET);

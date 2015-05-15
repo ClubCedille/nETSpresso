@@ -14,6 +14,7 @@ $l = array(
 	'user_id' => 'User Id',
 	'calendar_id' => 'Calendar Id',
 	'calendar_name' => 'Requestor',
+	'event_name' => 'Event',
 	'resource_id' => 'Resource Id',
 	'event_id' => 'Event Id',
 	'start_time' => 'Start',
@@ -25,7 +26,6 @@ $l = array(
 	'lastname' => 'Last name',
 
 );
-
 
 $l['cronNetspressoInitiator']='nÉTSpresso';
 $l['cronNetspressoInitiatorDescription']='Initiate the nÉTSpresso based on requested resources';

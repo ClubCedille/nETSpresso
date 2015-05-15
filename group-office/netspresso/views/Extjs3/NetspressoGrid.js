@@ -43,6 +43,10 @@ GO.netspresso.NetspressoGrid = function(config){
 			dataIndex: 'calendar_name',
 			//width: 200
 		},{
+			header: GO.netspresso.lang.event_name,
+			dataIndex: 'event_name',
+			//width: 200
+		},{
 			header: GO.netspresso.lang.start_time,
 			dataIndex: 'start_time',
 //			width: 140
@@ -77,7 +81,7 @@ GO.netspresso.NetspressoGrid = function(config){
 	//Defining the data store for the grid
 	config.store = new GO.data.JsonStore({
 		url: GO.url('netspresso/netspresso/store'),
-		fields: ['id','event_id','calendar_name','start_time','end_time','status', 'is_organizer'],
+		fields: ['id','event_id','calendar_name','event_name','start_time','end_time','status', 'is_organizer'],
 		remoteSort: true,
 		model: 'GO\\Netspresso\\Model\\Netspresso'
 	});
