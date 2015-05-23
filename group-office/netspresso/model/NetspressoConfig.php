@@ -21,6 +21,12 @@ class NetspressoConfig extends \GO\Base\Db\ActiveRecord {
 	}
 	
 	protected function init() {
+		//$this->columns["income"]["gotype"]="number";
+		//$this->columns['calendar_id']['required']=true;
+		//$this->columns['start_time']['gotype'] = 'unixtimestamp';
+		//$this->columns['end_time']['greater'] = 'start_time';
+		//$this->columns['end_time']['gotype'] = 'unixtimestamp';
+
 		return parent::init();
 	}
 	

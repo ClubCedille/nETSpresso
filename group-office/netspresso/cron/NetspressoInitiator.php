@@ -47,8 +47,8 @@ class NetspressoInitiator extends \GO\Base\Cron\AbstractCron {
 	 */	 
 	public function getEventsForPeriod($calendar_id, $start, $end) {
 		return \GO\Calendar\Model\Event::model()->findCalculatedForPeriod(
- 			\GO\Base\Db\FindParams::newInstance()->criteria(
- 				\GO\Base\Db\FindCriteria::newInstance()->addCondition('calendar_id', '','!=')
+			\GO\Base\Db\FindParams::newInstance()->criteria(
+				\GO\Base\Db\FindCriteria::newInstance()->addCondition('calendar_id', '','!=')
 			)->select(),
 			$start, 
 			$end
@@ -64,6 +64,7 @@ class NetspressoInitiator extends \GO\Base\Cron\AbstractCron {
 	private function findNextEvents($calendar_id, $start, $end) {
 		
 		$joinCriteria = \GO\Base\Db\FindCriteria::newInstance()
+//						->addCondition('user_id', GO::user()->id,'=','pt')
 						->addCondition('calendar_id', 'pt.calendar_id', '=', 't', true, true);
 		
 		$calendarJoinCriteria = \GO\Base\Db\FindCriteria::newInstance()
@@ -77,7 +78,7 @@ class NetspressoInitiator extends \GO\Base\Cron\AbstractCron {
 		
 			
 		$events = \GO\Calendar\Model\Event::model()->findCalculatedForPeriod($findParams, $start, $end);
-		//\GO::debug("Netspresso::findNextEvents events => " . var_export($events, true));
+		//GO::debug("Netspresso::findNextEvents events => " . var_export($events, true));
 		
 		return $events;
 
@@ -101,6 +102,7 @@ class NetspressoInitiator extends \GO\Base\Cron\AbstractCron {
 		\GO::session()->runAsRoot();
 
 		// Get the calendar id associated to the nÉTSpresso resource
+		//$resource_calendar_id = self::getConfigResourceId();
 		$resource_calendar_id = \GO\Netspresso\Model\NetspressoConfig::getResourceId();
 
 		// calculate start and end period times	
@@ -116,29 +118,31 @@ class NetspressoInitiator extends \GO\Base\Cron\AbstractCron {
 		foreach($events as $event){
 
 			$record = $event->getResponseData();
-			//\GO::debug("Netspresso: next event => " . var_export($record, true));
-
-			$eventRecord = \GO\Calendar\Model\Event::model()->findByPk($record['id']);
-			$cfRecord = $eventRecord->getCustomfieldsRecord();
-			//\GO::debug("Netspresso: next event custom fields => " . var_export($cfRecord, true));
-
+ 			//\GO::debug("Netspresso: next event => " . var_export($record, true));
+ 			
 			// Ensure the resource status is CONFIRMED
 			if ($record['status'] != \GO\Calendar\Model\Event::STATUS_CONFIRMED) {
-				//\GO::debug("Netspresso: resource status (" . $record['status'] . ") is not CONFIRMED");
+				\GO::debug("Netspresso: resource status (" . $record['status'] . ") is not CONFIRMED");
 				continue;
 			}
-
+			
 			// Ensure the event start within the required time frame
+			//GO::debug("Netspresso::run runjb time between " . date("Y-m-d H:i", $start) . " and " . date("Y-m-d H:i", $end));
+			//GO::debug("Netspresso::run event time between " . date("Y-m-d H:i", $event->getAlternateStartTime()) . " and " . date("Y-m-d H:i", $event->getAlternateEndTime()));				
+			
 			if( $end < $event->getAlternateStartTime() or $event->getAlternateStartTime() < $start) {
 				\GO::debug("Netspresso::run runjb time between " . date("Y-m-d H:i", $start) . " and " . date("Y-m-d H:i", $end));
 				\GO::debug("Netspresso::run event time between " . date("Y-m-d H:i", $event->getAlternateStartTime()) . " and " . date("Y-m-d H:i", $event->getAlternateEndTime()));				
 				continue;
 			}
 
-			$attribute = $cfRecord->getAttributeByName('Détail de salles', 'Netspresso');
-			//\GO::debug("Netspresso: next event attribute => " . var_export($attribute, true));
-			// Ensure the netspresso was requested 
-			if ($attribute != 1) {
+ 			$eventRecord = \GO\Calendar\Model\Event::model()->findByPk($record['id']);
+ 			$cfRecord = $eventRecord->getCustomfieldsRecord();
+ 			//\GO::debug("Netspresso: next event custom fields => " . var_export($cfRecord, true));
+ 			$attribute = $cfRecord->getAttributeByName('Détail de salles', 'Netspresso');
+
+ 			// Ensure the netspresso was requested 
+ 			if ($attribute != 1) {
 				\GO::debug("Netspresso: resource Netspresso (" . $attribute . ") was not requested");
 				continue;
 			}
@@ -147,9 +151,9 @@ class NetspressoInitiator extends \GO\Base\Cron\AbstractCron {
 			self::sendEventToNetspreso($event->getEvent());
 
 		} //end foreach
-
+		
 	}
-
+	
 	/**
 	 * Get the incoming events for the associated calendar
 	 * 
@@ -160,7 +164,7 @@ class NetspressoInitiator extends \GO\Base\Cron\AbstractCron {
 	private static function sendEventToNetspreso($event) {
 
 		//\GO::debug("Netspresso::sendToNetspreso (" . var_export($data, true) . ")");
-
+		
 		// Prepare the request body
 		$message = array (
 			'box' => array (
@@ -202,16 +206,16 @@ class NetspressoInitiator extends \GO\Base\Cron\AbstractCron {
 		try {
 			$response = $request->send();
 			
-			if (200 == $response->getStatus()) {
-				\GO::debug("Netspresso::sendToNetspreso response : " . $response->getBody());
+    		if (200 == $response->getStatus()) {
+        		\GO::debug("Netspresso::sendToNetspreso response : " . $response->getBody());
+        		
+        		$response = json_decode($response->getBody(), true);
 
-				$response = json_decode($response->getBody(), true);
-
-			} else {
-				\GO::debug("Netspresso::sendToNetspreso Unexpected response: " . $response->getStatus() . ' ' . $response->getReasonPhrase());
-			}
+    		} else {    	
+    			\GO::debug("Netspresso::sendToNetspreso Unexpected response: " . $response->getStatus() . ' ' . $response->getReasonPhrase());
+    		}
 		} catch (\HTTP_Request2_Exception $e) {
-			\GO::debug("Netspresso::sendToNetspreso Error: " . $e->getMessage() );
+    		\GO::debug("Netspresso::sendToNetspreso Error: " . $e->getMessage() );
 		}
 		
 	}

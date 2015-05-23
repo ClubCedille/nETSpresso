@@ -5,7 +5,7 @@ SELECT `cal_events`.id AS id, `cal_events`.id AS `event_id`, `cal_calendars`.nam
 FROM `groupoffice4`.`cf_cal_events` AS `cf_cal_events`, 
 	 `groupoffice4`.`cal_events` AS `cal_events`,
 	 `groupoffice4`.`cal_calendars` AS `cal_calendars`,
-	 `groupoffice4`.`go_users` AS `go_users`
+	 `groupoffice4`.`go_users` AS `go_users` 
 WHERE `cf_cal_events`.`model_id` = `cal_events`.`id` AND 
 	  `cal_events`.`calendar_id` = `cal_calendars`.`id` AND 
 	  `go_users`.`id` = `cal_calendars`.`user_id` AND 

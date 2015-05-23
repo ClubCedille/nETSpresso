@@ -41,7 +41,7 @@ GO.netspresso.NetspressoGrid = function(config){
 		},{
 			header: GO.netspresso.lang.calendar_name,
 			dataIndex: 'calendar_name',
-			//width: 200
+			//width: 200		
 		},{
 			header: GO.netspresso.lang.event_name,
 			dataIndex: 'event_name',
@@ -145,3 +145,4 @@ GO.netspresso.NetspressoGrid = function(config){
 Ext.extend(GO.netspresso.NetspressoGrid, GO.grid.GridPanel,{
 
 });
+
