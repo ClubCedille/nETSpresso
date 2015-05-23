@@ -4,7 +4,7 @@ use LWP::UserAgent;
  
 my $ua = LWP::UserAgent->new;
  
-my $server_endpoint = "http://netspresso.cedille.club/go/event.json";
+my $server_endpoint = "http://critias.etsmtl.ca:8080/go/event.json";
  
 # set custom HTTP request header fields
 my $req = HTTP::Request->new(POST => $server_endpoint);

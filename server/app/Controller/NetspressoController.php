@@ -167,8 +167,8 @@ private function expand_units($unitType) {
 			// TODO : Verify for duplicate entries as the client keep trying
 			// instead of throwing an error
 
-			$this->log("NetspressoController::metric caught exception: " .   $e->getMessage());
-			$this->log("NetspressoController::metric input data: " . var_export($this->request->data,true));
+			//$this->log("NetspressoController::metric caught exception: " .   $e->getMessage());
+			//$this->log("NetspressoController::metric input data: " . var_export($this->request->data,true));
 
 		}
 
@@ -225,8 +225,8 @@ private function expand_units($unitType) {
 					throw new InternalErrorException(__('The metric could not be saved. Please, try again.'));
 				}
 			} catch(Exception $e) { 
-				$this->log("NetspressoController::save_metrics caught exception: " .   $e->getMessage());
-				$this->log("NetspressoController::save_metrics input data: " . var_export($metric, true));
+				//$this->log("NetspressoController::save_metrics caught exception: " .   $e->getMessage());
+				//$this->log("NetspressoController::save_metrics input data: " . var_export($metric, true));
 			}
 			
 			// Clear the metric model before loop
@@ -297,8 +297,8 @@ private function expand_units($unitType) {
 		try {	
 			$this->Netspresso->save();
 		} catch(Exception $e) { 
-				$this->log("NetspressoController::heartbeat caught exception: " . $e->getMessage());
-				$this->log("NetspressoController::heartbeat input data: " . var_export($heartbeat, true));
+				//$this->log("NetspressoController::heartbeat caught exception: " . $e->getMessage());
+				//$this->log("NetspressoController::heartbeat input data: " . var_export($heartbeat, true));
 				throw new InternalErrorException(__('The state could not be saved. Please, try again.'));
 		}
 

@@ -64,17 +64,18 @@ class GoController extends AppController {
 		$jsonData = $this->request->data;
 
 		// Throw an error in case JSON data is not properly decoded
-     	if(is_null($jsonData) or $jsonData == false) {
-         	throw new BadRequestException(__('The received input json data is malformed'));	
-     	}
+     		if(is_null($jsonData) or $jsonData == false) {
+         		throw new BadRequestException(__('The received input json data is malformed'));	
+     		}
 
 		// Try to save request data
+		//$this->log("GoController::event input data: " . var_export($jsonData,true));
 		try {
 			// Save the Event model with request data
 			$this->Event->save($jsonData['event']);
 		} catch(Exception $e) {
-			$this->log("GoController::event caught exception: " .   $e->getMessage());	
-			$this->log("GoController::event input data: " . var_export($jsonData,true));
+			//$this->log("GoController::event caught exception: " .   $e->getMessage());	
+			//$this->log("GoController::event input data: " . var_export($jsonData,true));
 			// TODO : Verify for duplicate entries as the client keep trying
 			// instead of throwing an error
 			// throw new InternalErrorException(__('The event could not be saved. Please, try again.'));
@@ -99,8 +100,8 @@ class GoController extends AppController {
 		try {
 			$this->Netspresso->save();
 		} catch(Exception $e) { 
-			$this->log("GoController::event caught exception: " . $e->getMessage());
-			$this->log("GoController::event input data: " . var_export($jsonData, true));
+			//$this->log("GoController::event caught exception: " . $e->getMessage());
+			//$this->log("GoController::event input data: " . var_export($jsonData, true));
 			throw new InternalErrorException(__('The state could not be saved. Please, try again.'));
 		}
 
@@ -155,7 +156,7 @@ class GoController extends AppController {
      	}
 
 		// For debug
-		// $this->log("GoController::status input data: " . $boxname);
+		//$this->log("GoController::status input data: " . $boxname);
 	
 		// Initialize the nETSpresso object
 		if (!$this->Netspresso->loadByName($boxname, false)){
