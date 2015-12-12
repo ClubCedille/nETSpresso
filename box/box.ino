@@ -36,13 +36,17 @@ using namespace ArduinoJson::Generator;
 SoftwareSerial lcd = SoftwareSerial(0,2);
 
 // IP Address of nETSpresso server
-char server[] = "142.137.243.18";
+//char server[] = "142.137.247.120"; // Local Server
+char server[] = "142.137.243.18"; // Critias Server
+
+// PORT of nETSpresso server
+uint16_t port = 8080;
 
 // Arduino Ethernet's MAC address
 byte mac[] = { 0x90, 0xA2, 0xDA, 0x0E, 0xDC, 0x1E };
   
 // Default IP if no DHCP
-IPAddress ip(192,168,1,20);
+IPAddress ip(192,168,1,20); // Kind of useless...
 
 // Initialisation of Ethernet Client Library
 EthernetClient client;
@@ -277,9 +281,9 @@ void update_lcd_display(int state) {
     case WARMING:
       
       // Blue Color
+       lcd.write(0x255);
       lcd.write((uint8_t)0x00);
       lcd.write((uint8_t)0x00);
-      lcd.write(0x255);
       lcd.print(" WARMING UP");
       break;
   
@@ -563,11 +567,11 @@ int send_event() {
 void warm_up() {
   
   // Warm up the machine
-  if (temperature() < 100) {
+  if (temperature() < 100) 
     relay_activate(REL_WARM);
-    set_state(WARMING);
-    Serial.println("--> WARMING UP");
-  }
+  set_state(WARMING);
+  Serial.println("--> WARMING UP");
+  
 }
 
 //-----------//
@@ -667,7 +671,7 @@ bool connect() {
   client.stop();
   
   // Check if server is still connected
-  if (client.connect(server, 8080)) {
+  if (client.connect(server, port)) {
     Serial.println(F("--> Connected!"));
     return true;
   } 
@@ -687,7 +691,7 @@ bool connect() {
       }
       
     // Retry when the client is not connected
-    } while (!client.connect(server,80));
+    } while (!client.connect(server, port));
   }
   return true;
 }
