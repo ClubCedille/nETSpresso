@@ -40,7 +40,7 @@ SoftwareSerial lcd = SoftwareSerial(0,2);
 char server[] = "142.137.243.18"; // Critias Server
 
 // PORT of nETSpresso server
-uint16_t port = 8080;
+uint16_t port = 8085;
 
 // Arduino Ethernet's MAC address
 byte mac[] = { 0x90, 0xA2, 0xDA, 0x0E, 0xDC, 0x1E };
